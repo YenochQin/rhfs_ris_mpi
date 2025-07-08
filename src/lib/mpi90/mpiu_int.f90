@@ -13,7 +13,7 @@
 
       iy = 0
 
-      CALL MPI_Allreduce (ix(1), iy(1), n, MPI_INTEGER, MPI_SUM, &
+      CALL MPI_Allreduce (ix, iy, n, MPI_INTEGER, MPI_SUM, &
                                      MPI_COMM_WORLD, ierr)
       CALL icopy (n, iy, 1, ix, 1)
 

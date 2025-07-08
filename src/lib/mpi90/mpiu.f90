@@ -244,7 +244,7 @@
       IMPLICIT NONE
       include 'mpif.h'
       INTEGER, INTENT(IN)  ::  myid, nprocs
-      CHARACTER(LEN=*), INTENT(INOUT) :: msg
+      CHARACTER(LEN=*), INTENT(OUT) :: msg
 
 !-----------------------------------------------
 !   L o c a l  V a r i a b l e s
@@ -254,16 +254,16 @@
       msgLength = len_trim (msg)
 
       if (myid .ne. 0) then
-         call MPI_Send (msgLength, 4, MPI_BYTE, 0, myid, &
+         call MPI_Send (msgLength, 1, MPI_INTEGER, 0, myid, &
                         MPI_COMM_WORLD, ierr)   ! Send nsgLength
-         call MPI_Send (msg, msgLength, MPI_BYTE, 0, myid+nprocs, &
+         call MPI_Send (msg, msgLength, MPI_CHARACTER, 0, myid+nprocs, &
                         MPI_COMM_WORLD, ierr)   ! Send msg
       else
          print *, msg(1:msgLength)      ! msg from node 0 itself
          do inID = 1, nprocs - 1
-            call MPI_Recv (msgLength, 4, MPI_BYTE, inID, &
+            call MPI_Recv (msgLength, 1, MPI_INTEGER, inID, &
                            inID, MPI_COMM_WORLD, istat, ierr)
-            call MPI_Recv (msg, msgLength, MPI_BYTE, inID, &
+            call MPI_Recv (msg, msgLength, MPI_CHARACTER, inID, &
                            inID+nprocs, MPI_COMM_WORLD, istat, ierr)
             print *, msg(1:msgLength)
          enddo
@@ -341,7 +341,7 @@
       REAL(DOUBLE), DIMENSION(1:n)                :: y
 
       CALL dinit (n, 0.d0, y, 1)
-      CALL MPI_Allreduce (x(1), y(1), n, MPI_DOUBLE_PRECISION, &
+      CALL MPI_Allreduce (x, y, n, MPI_DOUBLE_PRECISION, &
                                    MPI_SUM, MPI_COMM_WORLD, ierr)
       CALL dcopy (n, y, 1, x, 1)   ! copy y to x
 
