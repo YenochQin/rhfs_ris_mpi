@@ -256,14 +256,14 @@
       if (myid .ne. 0) then
          call MPI_Send (msgLength, 1, MPI_INTEGER, 0, myid, &
                         MPI_COMM_WORLD, ierr)   ! Send nsgLength
-         call MPI_Send (msg(1:msgLength), msgLength, MPI_CHARACTER, 0, myid+nprocs, &
+         call MPI_Send (msg, msgLength, MPI_CHARACTER, 0, myid+nprocs, &
                         MPI_COMM_WORLD, ierr)   ! Send msg
       else
          print *, msg(1:msgLength)      ! msg from node 0 itself
          do inID = 1, nprocs - 1
             call MPI_Recv (msgLength, 1, MPI_INTEGER, inID, &
                            inID, MPI_COMM_WORLD, istat, ierr)
-            call MPI_Recv (msg(1:msgLength), msgLength, MPI_CHARACTER, inID, &
+            call MPI_Recv (msg, msgLength, MPI_CHARACTER, inID, &
                            inID+nprocs, MPI_COMM_WORLD, istat, ierr)
             print *, msg(1:msgLength)
          enddo
@@ -348,24 +348,4 @@
       RETURN
       END
 
-!***********************************************************************
-      SUBROUTINE gisummpi (ix, n)
-!     Sum x over all nodes and in iy, then copy iy to  ix
-!***********************************************************************
-      IMPLICIT NONE
-      INCLUDE 'mpif.h'
 
-      INTEGER, INTENT(IN)                         :: n
-      INTEGER, DIMENSION(1:n), INTENT(INOUT) ::  ix
-
-      INTEGER                                     :: ierr, i
-      INTEGER, DIMENSION(1:n)                ::  iy
-
-      iy = 0
-
-      CALL MPI_Allreduce (ix(1), iy(1), n, MPI_INTEGER, MPI_SUM, &
-                                     MPI_COMM_WORLD, ierr)
-      CALL icopy (n, iy, 1, ix, 1)
-
-      RETURN
-      END
