@@ -6,6 +6,11 @@ add_library(mpiu90 STATIC
     mpi_send_char.f90
     mpi_recv_int.f90
     mpi_recv_char.f90
+    mpi_bcast_int_s.f90
+    mpi_bcast_int_a.f90
+    mpi_bcast_char_a.f90
+    mpi_bcast_dp_s.f90
+    mpi_bcast_dp_a.f90
     cpath.f90
     cpath_I.f90
     cslhmpi.f90

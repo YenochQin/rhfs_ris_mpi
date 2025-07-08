@@ -38,6 +38,8 @@
       INTEGER, INTENT(IN)  :: NBLKIN
       CHARACTER  :: NAME*(*)
       CHARACTER  :: IDBLK(*)*8
+      CHARACTER*2 NH (*)
+      EXTERNAL mpi_bcast_int_s, mpi_bcast_int_a, mpi_bcast_char_a
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
@@ -60,25 +62,27 @@
 ! Broadcast results to other nodes. ncfblk should be allocated
 ! on these nodes (with myid .ne. 0)
 
-      CALL MPI_Bcast (nblock, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (ncftot, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL mpi_bcast_int_s (NBLOCK, 0)
 
-      IF (myid /= 0) THEN
-         CALL alloc (ncfblk, 1+nblock, 'ncfblk', 'cslhmpi')
+      IF (myid .NE. 0) THEN
+         CALL ALLOC (NCFBLK, 1+NBLOCK, 'NCFBLK', 'CSLHMPI')
+         CALL ALLOC (IDBLK, NBLOCK, 'IDBLK', 'CSLHMPI')
       ENDIF
 
-      CALL MPI_Bcast (ncfblk, 1+nblock, MPI_INTEGER,0, &
-                                              MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (idblk, 8*nblock, MPI_CHARACTER,0, &
-                                              MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (ncore, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nelec, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nw,    1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (np,   nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nak,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nkl,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nkj,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nh, 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+      CALL mpi_bcast_int_a (NCFBLK, 1+NBLOCK, 0)
+      CALL mpi_bcast_char_a (IDBLK, 8*NBLOCK, 0)
+
+      NW = NCFBLK(NBLOCK+1)
+
+      IF (myid .NE. 0) THEN
+         CALL ALLOC (NH, NW, 'NH', 'CSLHMPI')
+      ENDIF
+
+      CALL mpi_bcast_int_a (NP, NW, 0)
+      CALL mpi_bcast_int_a (NAK, NW, 0)
+      CALL mpi_bcast_int_a (NKL, NW, 0)
+      CALL mpi_bcast_int_a (NKJ, NW, 0)
+      CALL mpi_bcast_char_a (NH, 2*NW, 0)
 
       RETURN
       END SUBROUTINE CSLHMPI
