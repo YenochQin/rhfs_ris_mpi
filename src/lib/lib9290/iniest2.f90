@@ -79,7 +79,7 @@
          CALL DCOPY (NS, VEC(NS*(J-1)+1), 1, BASIS(NCF*(J-1)+1), 1)
       END DO
 
-      CALL DCOPY (NIV, EIGVAL, 1, BASIS(NIV*NCF+1), 1)
+      CALL DCOPY (NIV, EIGVAL(1), 1, BASIS(NIV*NCF+1), 1)
 
       !deallocate(ap)
       !deallocate(eigval)
