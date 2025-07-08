@@ -232,12 +232,25 @@
 
 !***********************************************************************
       subroutine mpix_printmsg (msg, myid, nprocs)
-      USE mpiu_wrappers
+
+! Displays on node-0's screen info from all nodes including node 0.
+
+!***********************************************************************
+!  Modified by Charlotte F. Fischer   10/10/2017
+
+!-----------------------------------------------
+!   D u m m y   A r g u m e n t s
+!-----------------------------------------------
       IMPLICIT NONE
       include 'mpif.h'
       INTEGER, INTENT(IN)  ::  myid, nprocs
       CHARACTER(LEN=*), INTENT(OUT) :: msg
-      INTEGER :: inID, istat(MPI_STATUS_SIZE), msgLength
+
+!-----------------------------------------------
+!   L o c a l   V a r i a b l e s
+!-----------------------------------------------
+      INTEGER :: inID, istat(MPI_STATUS_SIZE), ierr, msgLength
+      EXTERNAL mpi_send_int, mpi_send_char, mpi_recv_int, mpi_recv_char
 
       msgLength = len_trim (msg)
 
