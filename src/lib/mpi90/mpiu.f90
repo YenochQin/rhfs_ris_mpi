@@ -254,16 +254,16 @@
       msgLength = len_trim (msg)
 
       if (myid .ne. 0) then
-         call MPI_Send (msgLength, 1, MPI_INTEGER, 0, myid, &
+         call MPI_Send (msgLength, 4, MPI_BYTE, 0, myid, &
                         MPI_COMM_WORLD, ierr)   ! Send nsgLength
-         call MPI_Send (msg, msgLength, MPI_CHARACTER, 0, myid+nprocs, &
+         call MPI_Send (msg, msgLength, MPI_BYTE, 0, myid+nprocs, &
                         MPI_COMM_WORLD, ierr)   ! Send msg
       else
          print *, msg(1:msgLength)      ! msg from node 0 itself
          do inID = 1, nprocs - 1
-            call MPI_Recv (msgLength, 1, MPI_INTEGER, inID, &
+            call MPI_Recv (msgLength, 4, MPI_BYTE, inID, &
                            inID, MPI_COMM_WORLD, istat, ierr)
-            call MPI_Recv (msg, msgLength, MPI_CHARACTER, inID, &
+            call MPI_Recv (msg, msgLength, MPI_BYTE, inID, &
                            inID+nprocs, MPI_COMM_WORLD, istat, ierr)
             print *, msg(1:msgLength)
          enddo
