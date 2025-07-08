@@ -11,7 +11,7 @@ add_executable(rhfszeeman95_mpi
     getmixblock_I.f90
     engouth.f90
     gethfd.f90
-    hfszeemanmpi.f90
+
     hfszeeman06mpi.f90
     matelt.f90
     rinthf.f90

@@ -35,7 +35,7 @@ add_executable(ris4_mpi
     getmixblock.f90
     getsmd.f90
     polint.f90
-    ris_cal_mpi.f90
+
     rintdens.f90
     rintdensvec.f90
     rinti_nms.f90
