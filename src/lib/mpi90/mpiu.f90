@@ -232,39 +232,23 @@
 
 !***********************************************************************
       subroutine mpix_printmsg (msg, myid, nprocs)
-
-! Displays on node-0's screen info from all nodes including node 0.
-
-!***********************************************************************
-!  Modified by Charlotte F. Fischer   10/10/2017
-
-!-----------------------------------------------
-!   D u m m y   A r g u m e n t s
-!-----------------------------------------------
+      USE mpiu_wrappers
       IMPLICIT NONE
       include 'mpif.h'
       INTEGER, INTENT(IN)  ::  myid, nprocs
       CHARACTER(LEN=*), INTENT(OUT) :: msg
-
-!-----------------------------------------------
-!   L o c a l  V a r i a b l e s
-!-----------------------------------------------
-      INTEGER :: inID, istat(MPI_STATUS_SIZE), ierr, msgLength
+      INTEGER :: inID, istat(MPI_STATUS_SIZE), msgLength
 
       msgLength = len_trim (msg)
 
       if (myid .ne. 0) then
-         call MPI_Send (msgLength, 1, MPI_INTEGER, 0, myid, &
-                        MPI_COMM_WORLD, ierr)   ! Send nsgLength
-         call MPI_Send (msg, msgLength, MPI_CHARACTER, 0, myid+nprocs, &
-                        MPI_COMM_WORLD, ierr)   ! Send msg
+         call mpi_send_int (msgLength, 0, myid)
+         call mpi_send_char (msg, msgLength, 0, myid+nprocs)
       else
-         print *, msg(1:msgLength)      ! msg from node 0 itself
+         print *, msg(1:msgLength)
          do inID = 1, nprocs - 1
-            call MPI_Recv (msgLength, 1, MPI_INTEGER, inID, &
-                           inID, MPI_COMM_WORLD, istat, ierr)
-            call MPI_Recv (msg, msgLength, MPI_CHARACTER, inID, &
-                           inID+nprocs, MPI_COMM_WORLD, istat, ierr)
+            call mpi_recv_int (msgLength, inID, inID, istat)
+            call mpi_recv_char (msg, msgLength, inID, inID+nprocs, istat)
             print *, msg(1:msgLength)
          enddo
       endif

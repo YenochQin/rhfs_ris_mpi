@@ -2,6 +2,7 @@ add_library(mpiu90 STATIC
     mpi_C.f90
     mpiu.f90
     mpiu_int.f90
+    mpiu_wrappers.f90
     cpath.f90
     cpath_I.f90
     cslhmpi.f90
