@@ -19,6 +19,7 @@ add_executable(rhfs90mpi
     matelt_I.f90
     rinthf.f90
     rinthf_I.f90
+    opt6_C.f90
 )
 
 setup_fortran_modules(rhfs90mpi)
