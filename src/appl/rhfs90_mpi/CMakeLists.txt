@@ -6,8 +6,6 @@ add_executable(hfs92mpi
     strsum.f90
     setsum_I.f90
     setsum.f90
-    setcsla_I.f90
-    setcsla.f90
     setdbg_I.f90
     setdbg.f90
     rinthf_I.f90
