@@ -40,7 +40,7 @@
       FILNAM = NAME(1:K-1)//'.c'
 
       ! Debug output
-      WRITE (6, *) 'DEBUG: Looking for file: "', TRIM(FILNAM), '"'
+      WRITE (6, *) 'DEBUG: Process calling SETCSLL is looking for file: "', TRIM(FILNAM), '"'
       
       INQUIRE(FILE=FILNAM, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
