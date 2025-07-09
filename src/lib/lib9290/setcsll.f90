@@ -29,7 +29,7 @@
 !-----------------------------------------------
       INTEGER :: I, NCSF, IOS, IERR
       LOGICAL :: FOUND
-      CHARACTER :: STR*15, CH*2, LINE3*200
+      CHARACTER :: STR*200, CH*2, LINE3*200
 !-----------------------------------------------
 ! Locals
 
@@ -51,9 +51,20 @@
 
 ! Check the first record of the file; if not as expected, stop
 
-      READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
-      IF (IOS/=0 .OR. STR/='Core subshells:') THEN
+      READ (NUNIT, '(A)', IOSTAT=IOS) STR
+      IF (IOS/=0) THEN
+         WRITE (6, *) 'Error reading first line of file, IOSTAT=', IOS
+         CLOSE(NUNIT)
+         STOP
+      ENDIF
+      
+      WRITE (6, *) 'DEBUG: First line of file: [', TRIM(STR), ']'
+      WRITE (6, *) 'DEBUG: Length of line:', LEN_TRIM(STR)
+      
+      IF (TRIM(STR) /= 'Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
+         WRITE (6, *) 'Expected: [Core subshells:]'
+         WRITE (6, *) 'Found:    [', TRIM(STR), ']'
          CLOSE(NUNIT)
          STOP
       ENDIF
