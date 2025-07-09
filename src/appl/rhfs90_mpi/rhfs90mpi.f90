@@ -165,18 +165,29 @@
 
 !=======================================================================
 !   Open, check, load data from, and close, the  .csl  file
+!   Only master process reads the file, then broadcasts data to all processes
 !=======================================================================
-      CALL SETCSLA (NAME, NCORE_NOT_USED)
+      IF (myid .EQ. 0) THEN
+         CALL SETCSLA (NAME, NCORE_NOT_USED)
+      ENDIF
+      
+      ! Broadcast the orbital configuration data to all processes
+      ! This ensures all processes have the same orbital data
+      CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
 !=======================================================================
-!   Get the remaining information
+!   Get the remaining information (only master process)
 !=======================================================================
-      CALL GETHFD (NAME)
+      IF (myid .EQ. 0) THEN
+         CALL GETHFD (NAME)
+      ENDIF
 
 !=======================================================================
-!   Get the eigenvectors
+!   Get the eigenvectors (only master process) 
 !=======================================================================
-      CALL GETMIXBLOCK (NAME, NCI)
+      IF (myid .EQ. 0) THEN
+         CALL GETMIXBLOCK (NAME, NCI)
+      ENDIF
 
 !=======================================================================
 !   Append a summary of the inputs to the  .sum  file
