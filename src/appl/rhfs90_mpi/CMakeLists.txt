@@ -20,6 +20,8 @@ add_executable(rhfs90mpi
     rinthf.f90
     rinthf_I.f90
     opt6_C.f90
+    engouth.f90
+    engouth_I.f90
 )
 
 setup_fortran_modules(rhfs90mpi)
