@@ -39,15 +39,21 @@
       IF (K == 0) K = LEN_TRIM(NAME) + 1
       FILNAM = NAME(1:K-1)//'.c'
 
+      ! Debug output
+      WRITE (6, *) 'DEBUG: Looking for file: "', TRIM(FILNAM), '"'
+      
       INQUIRE(FILE=FILNAM, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
          WRITE (6, *) FILNAM(1:LEN_TRIM(FILNAM)), ' does not exist'
          STOP
       ENDIF
+      
+      WRITE (6, *) 'DEBUG: File exists, attempting to open...'
 
 ! Open it
 
       CALL OPENFL (NUNIT, FILNAM, 'FORMATTED', 'OLD', IERR)
+      WRITE (6, *) 'DEBUG: OPENFL returned IERR =', IERR
       IF (IERR == 1) THEN
          WRITE (6, *) 'Error when opening ', FILNAM(1:LEN_TRIM(FILNAM))
          STOP
@@ -56,14 +62,10 @@
 ! Check the first record of the file; if not as expected, stop
 
       READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
-      ! Debug output to see what we actually read
-      WRITE (6, *) 'DEBUG: Read string: "', STR, '"'
-      WRITE (6, *) 'DEBUG: String length:', LEN_TRIM(STR)
-      WRITE (6, *) 'DEBUG: Expected: "Core subshells:"'
-      WRITE (6, *) 'DEBUG: IOS =', IOS
       IF (IOS/=0 .OR. STR/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
-         CLOSE(NUNIT)
+         ! Don't close the file here - let the calling function handle it
+         ! CLOSE(NUNIT)
          STOP
       ENDIF
 
