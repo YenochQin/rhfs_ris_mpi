@@ -55,7 +55,6 @@
 !
 !   Allocate storage to orbital arrays
 !
-      IF (myid .EQ. 0) WRITE (6, *) 'LODRWFMPI: Function entered'
       CALL ALLOC(PF, NNNP, NW, 'PF', 'LODRWFMPI')
       CALL ALLOC(QF, NNNP, NW, 'QF', 'LODRWFMPI')
 
@@ -96,50 +95,49 @@
 !
       IF (LDBPR(3) .AND. myid .EQ. 0) WRITE (99,300)
       NWIN = 0
-      
-      ! Process 0 reads entire .w file first
-      IF (myid .EQ. 0) THEN
-         DO WHILE (.TRUE.)
-            READ (23,IOSTAT = IOS) NPY,NAKY,EY,MY
-            IF (IOS .NE. 0) EXIT
-            
-            ! Allocate temporary arrays
-            CALL ALLOC (PA,MY, 'PA', 'LODRWFMPI')
-            CALL ALLOC (QA,MY, 'QA', 'LODRWFMPI')
-            CALL ALLOC (RA,MY, 'RA', 'LODRWFMPI')
-            
-            ! Read orbital data
+    3 CONTINUE
+
+      IF (myid .EQ. 0) READ (23,IOSTAT = IOS) NPY,NAKY,EY,MY
+      CALL MPI_Bcast (IOS,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NPY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAKY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (MY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (EY,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+
+      IF (IOS .EQ. 0) THEN
+         CALL ALLOC (PA,MY, 'PA', 'LODRWFMPI')
+         CALL ALLOC (QA,MY, 'QA', 'LODRWFMPI')
+         CALL ALLOC (RA,MY, 'RA', 'LODRWFMPI')
+
+         IF (myid .EQ. 0) THEN
             READ (23) PZY,(PA(I),I = 1,MY),(QA(I),I =1 ,MY)
-            read (23) (RA(I),I = 1,MY)
-            
-            ! Process orbital data
-            DO J = 1, NW
-               IF (.NOT.(E(J)<0.0D00 .AND. NPY==NP(J) .AND. NAKY==NAK(J))) CYCLE
-                  PZ(J) = PZY
-                  E(J) = EY
-                  CALL INTRPQ (PA, QA, MY, RA, J, DNORM)
-                  IF (LDBPR(3)) WRITE (99,301) NP(J), NH(J), E(J), DNORM
-                  NWIN = NWIN + 1
-                  WRITE (6, *) 'Match found J=', J, 'NWIN=', NWIN
-            ENDDO
-            
-            ! Deallocate temporary arrays
-            CALL DALLOC (PA, 'PA', 'LODRWFMPI')
-            CALL DALLOC (QA, 'QA', 'LODRWFMPI')
-            CALL DALLOC (RA, 'RA', 'LODRWFMPI')
+            READ (23) (RA(I),I = 1,MY)
+         ENDIF
+
+         CALL MPI_Bcast (PZY,1,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (PA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (QA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (RA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+
+         DO J = 1, NW
+            IF (.NOT.(E(J)<0.0D00 .AND. NPY==NP(J) .AND. NAKY==NAK(J))) CYCLE
+               PZ(J) = PZY
+               E(J) = EY
+               CALL INTRPQ (PA, QA, MY, RA, J, DNORM)
+               IF (LDBPR(3) .AND. myid .EQ. 0) &
+                     WRITE (99,301) NP(J), NH(J), E(J), DNORM
+               NWIN = NWIN + 1
          ENDDO
-         WRITE (6, *) 'Process 0 finished reading .w file, NWIN=', NWIN
-      ENDIF
-      
-      ! Broadcast the results to all processes
-      CALL MPI_Bcast (NWIN,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (PZ,NW,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (E,NW,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (PF,N*NW,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (QF,N*NW,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
-      
-      IF (myid .NE. 0) THEN
-         WRITE (6, *) 'Process', myid, 'received NWIN=', NWIN
+
+         CALL DALLOC (PA, 'PA', 'LODRWFMPI')
+         CALL DALLOC (QA, 'QA', 'LODRWFMPI')
+         CALL DALLOC (RA, 'RA', 'LODRWFMPI')
+
+         GOTO 3
       ENDIF
       IF (LDBPR(3) .AND. myid .EQ. 0) &
             WRITE (99,*) ' orbitals renormalised;'
@@ -147,10 +145,6 @@
 !   Return with an error code if all orbitals are not known
 !
       IF (NWIN .LT. NW) THEN
-         IF (myid .EQ. 0) THEN
-            WRITE (6, *) 'LODRWFMPI: Not all orbitals loaded'
-            WRITE (6, *) 'NWIN =', NWIN, 'NW =', NW
-         ENDIF
          ierror = 1
          RETURN
       ENDIF
@@ -162,7 +156,6 @@
       IF (LDBPR(3) .AND. myid .EQ. 0) &
             WRITE (99,*) 'orbitals orthogonalised and renormalised;'
       ierror = 0
-      IF (myid .EQ. 0) WRITE (6, *) 'LODRWFMPI: Function completed successfully'
 
   300 FORMAT (/'From SUBROUTINE LODRWFmpi:' &
               /' Orbital',8X,'Eigenvalue',19X,'Norm')

@@ -44,7 +44,7 @@
 
 !   Check the file; if not as expected, stop.
 
-         read (23,IOSTAT = IOS) G92RWF
+         READ (23,IOSTAT = IOS) G92RWF
          IF ((IOS .NE. 0) .OR. (G92RWF .NE. 'G92RWF')) THEN
             WRITE (istde,*) 'This is not a Radial WaveFunction File;'
             CLOSE (23)

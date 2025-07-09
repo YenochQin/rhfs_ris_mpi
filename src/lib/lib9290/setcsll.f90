@@ -27,51 +27,34 @@
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
-      INTEGER :: I, NCSF, IOS, IERR, K
+      INTEGER :: I, NCSF, IOS, IERR
       LOGICAL :: FOUND
-      CHARACTER :: STR*15, CH*2, LINE3*200, FILNAM*256, PWD*512
+      CHARACTER :: STR*15, CH*2, LINE3*200
 !-----------------------------------------------
 ! Locals
 
-! Look for  <name>.c (add .c extension)
+! Look for  <name>
 
-      K = INDEX(NAME,' ')
-      IF (K == 0) K = LEN_TRIM(NAME) + 1
-      FILNAM = NAME(1:K-1)//'.c'
-
-      ! Try to find file in parent directory (go up from mpi_tmp/xxx)
-      CALL GETCWD(PWD)
-      ! First try current directory
-      INQUIRE(FILE=FILNAM, EXIST=FOUND)
+      INQUIRE(FILE=NAME, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
-         ! Try parent directory (../../filename)
-         FILNAM = '../../' // NAME(1:K-1) // '.c'
-         INQUIRE(FILE=FILNAM, EXIST=FOUND)
-      ENDIF
-      IF (.NOT.FOUND) THEN
-         WRITE (6, *) NAME(1:K-1) // '.c', ' does not exist'
-         WRITE (6, *) 'Searched in: ', TRIM(PWD)
-         WRITE (6, *) 'And in: ', TRIM(PWD) // '/../../'
+         WRITE (6, *) NAME(1:LEN_TRIM(NAME)), ' does not exist'
          STOP
       ENDIF
 
-! Open it - try direct Fortran OPEN instead of OPENFL
+! Open it
 
-      OPEN(UNIT=NUNIT, FILE=FILNAM, STATUS='OLD', FORM='FORMATTED', &
-           IOSTAT=IERR, ACTION='READ')
-      IF (IERR /= 0) THEN
-         WRITE (6, *) 'Error when opening ', FILNAM(1:LEN_TRIM(FILNAM))
-         WRITE (6, *) 'IOSTAT =', IERR
+      CALL OPENFL (NUNIT, NAME, 'FORMATTED', 'OLD', IERR)
+      IF (IERR == 1) THEN
+         WRITE (6, *) 'Error when opening ', NAME(1:LEN_TRIM(NAME))
          STOP
       ENDIF
 
 ! Check the first record of the file; if not as expected, stop
 
-      READ (NUNIT, '(A)', IOSTAT=IOS) STR
-      IF (IOS/=0 .OR. TRIM(STR)/='Core subshells:') THEN
+      READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
+      IF (IOS/=0 .OR. STR/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
-         ! Don't close the file here - let the calling function handle it
-         ! CLOSE(NUNIT)
+         CLOSE(NUNIT)
          STOP
       ENDIF
 

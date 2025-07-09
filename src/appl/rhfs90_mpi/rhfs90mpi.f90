@@ -61,6 +61,8 @@
       USE wave_C
       USE npar_C
       USE wfac_C
+      USE parameter_def, ONLY: NNNW
+      USE STAT_C, ONLY: JCUPA
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -78,6 +80,7 @@
       USE cslhmpi_I
       USE lodrwfmpi_I
       USE setrwfmpi_I
+      USE lodcslmpi_I
       IMPLICIT NONE
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
@@ -139,7 +142,9 @@
          ENDIF
          NAMESAVE = NAME
          lenname = LEN_TRIM (NAME)
-         ! Don't modify NAME path - let user provide correct path or rely on working directory
+         ! Form full path following rbiotransform90_mpi pattern
+         NAME = TRIM(PERMDIR) // '/' // NAME(1:lenname)
+         lenname = LEN_TRIM(NAME)
          
          WRITE (ISTDE, *)
          WRITE (ISTDE, *) 'Mixing coefficients from a CI calc.?'
@@ -183,11 +188,10 @@
 
 !=======================================================================
 !   Load configuration data using cslhmpi which handles MPI broadcasting
-!   This function properly allocates arrays on all processes before broadcasting
+!   Following the pattern from rangular90_mpi and rbiotransform90_mpi
 !=======================================================================
-      ! cslhmpi/SETCSLL will add .c extension automatically
-      ! Pass the base name without extension
-      CALL cslhmpi (NAME(1:lenname), NCORE_NOT_USED, 50, IDBLK)
+      ! Load CSL header information
+      CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
       
       ! Print summary information on master process
       IF (myid .EQ. 0) THEN
@@ -195,6 +199,12 @@
          WRITE (ISTDE, *) 'There are', NCF, 'relativistic CSFs;'
          WRITE (ISTDE, *) '... load complete;'
       ENDIF
+      
+      ! Allocate JCUPA array on all processes following rangular90_mpi pattern
+      CALL ALLOC (JCUPA, NNNW, NCF, 'JCUPA', 'RHFS90MPI')
+      
+      ! Load CSL data and broadcast JCUPA using LODCSLmpi
+      CALL LODCSLmpi (21, NCORE_NOT_USED, -119)
 
 !=======================================================================
 !   Get the remaining information (only master process)
@@ -245,12 +255,8 @@
 !   Load wavefunction data using MPI-aware function
 !=======================================================================
       ! setrwfmpi opens .w file and calls lodrwfmpi internally
-      ! Check if filename ends with .c extension and build .w filename
-      IF (lenname >= 2 .AND. NAME(lenname-1:lenname) == '.c') THEN
-         CALL setrwfmpi (NAME(1:lenname-2) // '.w')
-      ELSE
-         CALL setrwfmpi (NAME(1:lenname) // '.w')
-      ENDIF
+      ! Build .w filename from the base name (remove .c extension)
+      CALL setrwfmpi (NAME(1:lenname-2) // '.w')
       
       IF (myid .EQ. 0) WRITE (ISTDE, *) 'Wavefunction data loaded successfully'
 
