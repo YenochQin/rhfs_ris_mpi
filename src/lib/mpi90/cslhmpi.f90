@@ -41,7 +41,7 @@
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
-      INTEGER :: IQADUM
+      INTEGER :: IQADUM, IOS
 !-----------------------------------------------
 !
 
@@ -51,9 +51,13 @@
         CALL SETCSLL (21, name, nblkin, nblock, ncfblk, ncftot, &
                        idblk)
         CALL RALLOC  (ncfblk, nblock+1, 'ncfblk', 'cslhmpi')
+         WRITE (6, *) 'DEBUG CSLHMPI: About to REWIND unit 21'
          REWIND (21)
-         READ   (21,*)
+         WRITE (6, *) 'DEBUG CSLHMPI: About to skip first line'
+         READ   (21,*, IOSTAT=IOS)
+         WRITE (6, *) 'DEBUG CSLHMPI: Skip line IOS =', IOS
          !..Load header of <name> file
+         WRITE (6, *) 'DEBUG CSLHMPI: About to call LODCSH'
          CALL LODCSH (21, NCORE)
       ENDIF
 

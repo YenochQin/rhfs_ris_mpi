@@ -58,12 +58,16 @@
 ! Check the first record of the file; if not as expected, stop
 
       READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
+      WRITE (6, *) 'DEBUG SETCSLL: First line read, IOS =', IOS
+      WRITE (6, *) 'DEBUG SETCSLL: STR = "', TRIM(STR), '"'
+      WRITE (6, *) 'DEBUG SETCSLL: Expected "Core subshells:"'
       IF (IOS/=0 .OR. STR/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
          ! Don't close the file here - let the calling function handle it
          ! CLOSE(NUNIT)
          STOP
       ENDIF
+      WRITE (6, *) 'DEBUG SETCSLL: Format check passed, continuing...'
 
 ! Skip next 4 records
 
@@ -103,6 +107,10 @@
 ! Obtain ncftot
 
       NCFTOT = SUM(NCFBLK(:NBLOCK))
+
+      WRITE (6, *) 'DEBUG SETCSLL: Completed successfully, NBLOCK =', NBLOCK
+      WRITE (6, *) 'DEBUG SETCSLL: NCFTOT =', NCFTOT
+      WRITE (6, *) 'DEBUG SETCSLL: File unit', NUNIT, 'should still be open'
 
       RETURN
       END SUBROUTINE SETCSLL
