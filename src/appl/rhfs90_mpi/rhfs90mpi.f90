@@ -58,7 +58,7 @@
       USE setmc_I
       USE setcon_I
       USE setsum_I
-      USE setcsla_I
+      USE cslhmpi_I
       USE gethfd_I
       USE getmixblock_I
       USE strsum_I
@@ -166,33 +166,12 @@
       IF (myid .EQ. 0) CALL SETSUM (NAME, NCI)
 
 !=======================================================================
-!   Open, check, load data from, and close, the  .csl  file
-!   Only master process reads the file, then broadcasts data to all processes
+!   Load configuration data using MPI-aware function
+!   This function handles all file I/O and data broadcasting automatically
 !=======================================================================
-      IF (myid .EQ. 0) THEN
-         CALL SETCSLA (NAME, NCORE_NOT_USED)
-      ENDIF
-      
-      ! Broadcast the orbital configuration data to all processes
-      ! Need to broadcast: NCORE_NOT_USED, NCF, NW, NP, NAK, NKL, NKJ, NH, NELEC
-      CALL MPI_Bcast (NCORE_NOT_USED, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      CALL MPI_Bcast (NCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      CALL MPI_Bcast (NW, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      CALL MPI_Bcast (NELEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      
-      IF (myid .NE. 0) THEN
-         ! Non-master processes need to allocate arrays based on received dimensions
-         ! This ensures all processes have the same orbital data structures
-      ENDIF
-      
-      ! Broadcast orbital data arrays (if NW > 0)
-      IF (NW > 0) THEN
-         CALL MPI_Bcast (NP, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (NAK, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (NKL, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (NKJ, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (NH, 2*NW, MPI_CHARACTER, 0, MPI_COMM_WORLD, ierr)
-      ENDIF
+      ! Use MPI version that handles file reading and data broadcasting
+      CHARACTER(LEN=8) :: DUMMY_IDBLK(1) = ['DEFAULT ']
+      CALL CSLHMPI (NAME, NCORE_NOT_USED, 1, DUMMY_IDBLK)
 
 !=======================================================================
 !   Get the remaining information (only master process)
