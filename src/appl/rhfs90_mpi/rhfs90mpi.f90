@@ -75,6 +75,7 @@
       CHARACTER(LEN=128) :: STARTDIR, TMPDIR, PERMDIR
       CHARACTER(LEN=80)  :: MSG
       CHARACTER(LEN=3)   :: IDSTRING
+      CHARACTER(LEN=8)   :: DUMMY_IDBLK(1)
 !-----------------------------------------------
 !=======================================================================
 !  Start mpi --- get processor info: myid, nprocs, host name; and print
@@ -136,7 +137,7 @@
       ENDIF
       
       CALL MPI_Bcast (lenname,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (NAME,lenname,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAME,24,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (NCI,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================
@@ -170,7 +171,7 @@
 !   This function handles all file I/O and data broadcasting automatically
 !=======================================================================
       ! Use MPI version that handles file reading and data broadcasting
-      CHARACTER(LEN=8) :: DUMMY_IDBLK(1) = ['DEFAULT ']
+      DUMMY_IDBLK(1) = 'DEFAULT '
       CALL CSLHMPI (NAME, NCORE_NOT_USED, 1, DUMMY_IDBLK)
 
 !=======================================================================
