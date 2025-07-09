@@ -1,19 +1,55 @@
-add_library(dvd90 STATIC
-    adds_I.f90
-    dvdrvr_I.f90
-    dvdson_I.f90
-    initdvd_I.f90
-    mgs_nrm_I.f90
-    multbc_I.f90
-    newvec_I.f90
-    ovflow_I.f90
-    tstsel_I.f90
-    dvdson.f90
-    gdvd.f90
-    gdvd_I.f90
-    iniest.f90
-    iniest_I.f90
+add_library(libdvd90 STATIC
+    angular_I.f90
+    angular.f90
+    cfp_I.f90
+    cfp.f90
+    couple_I.f90
+    couple.f90
+    cslcal_I.f90
+    cslcal.f90
+    drc_I.f90
+    drc.f90
+    gracah1_I.f90
+    gracah1.f90
+    gracah2_I.f90
+    gracah2.f90
+    gracah_I.f90
+    gracah.f90
+    jcal_I.f90
+    jcal.f90
+    jcomp_I.f90
+    jcomp.f90
+    njgraf_I.f90
+    njgraf.f90
+    oneparticlejj_I.f90
+    oneparticlejj.f90
+    oscl_I.f90
+    oscl.f90
+    qcal_I.f90
+    qcal.f90
+    qcomp_I.f90
+    qcomp.f90
+    rcfp_I.f90
+    rcfp.f90
+    recouple_I.f90
+    recouple.f90
+    red_I.f90
+    red.f90
+    scal_I.f90
+    scal.f90
+    scomp_I.f90
+    scomp.f90
+    tnsjj_I.f90
+    tnsjj.f90
+    tnsq_I.f90
+    tnsq.f90
+    tre_I.f90
+    tre.f90
+    vector_I.f90
+    vector.f90
+    weight_I.f90
+    weight.f90
 )
-setup_fortran_modules(dvd90)
-target_link_libraries_Fortran(dvd90 PRIVATE mod)
-install(TARGETS dvd90 DESTINATION lib/)
+setup_fortran_modules(libdvd90)
+target_link_libraries_Fortran(libdvd90 PRIVATE lib9290)
+install(TARGETS libdvd90 DESTINATION lib)

@@ -1,4 +1,4 @@
-add_library(9290 STATIC
+add_library(lib9290 STATIC
     alcbuf.f90
     alcbuf_I.f90
     arctan.f90
@@ -148,8 +148,7 @@ add_library(9290 STATIC
     stoptime.f90
     stoptime_I.f90
 )
-setup_fortran_modules(9290)
-target_link_libraries_Fortran(9290 PRIVATE mod)
-target_link_libraries(9290 PRIVATE ${BLAS_LIBRARIES} ${BLAS_LINKER_FLAGS})
-target_link_libraries(9290 PRIVATE ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-install(TARGETS 9290 DESTINATION lib/)
+setup_fortran_modules(lib9290)
+target_link_libraries_Fortran(lib9290 PRIVATE libmod)
+target_link_libraries(lib9290 PRIVATE ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+install(TARGETS lib9290 DESTINATION lib)

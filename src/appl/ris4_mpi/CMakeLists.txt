@@ -27,6 +27,30 @@ add_executable(rismpi
     vinti.f90
     ris_C.f90
     teilst_C.f90
+    angdata_I.f90
+    densnew_I.f90
+    densnew_seltz_I.f90
+    densread_I.f90
+    densread_seltz_I.f90
+    edensityfit_I.f90
+    engout_I.f90
+    getmixblock_I.f90
+    getsmd_I.f90
+    polint_I.f90
+    rint_sms2_I.f90
+    rint_sms3_I.f90
+    rintdens_I.f90
+    rintdensvec_I.f90
+    rinti_nms_I.f90
+    ris_cal_I.f90
+    setdbg_I.f90
+    setsum_I.f90
+    sigma_1_I.f90
+    sigma_2_I.f90
+    smsnew_I.f90
+    smsread_I.f90
+    strsum_I.f90
+    vinti_I.f90
 )
 
 target_link_libraries_Fortran(rismpi PRIVATE

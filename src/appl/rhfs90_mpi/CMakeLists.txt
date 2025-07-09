@@ -17,6 +17,8 @@ add_executable(hfs92mpi
     engouth_I.f90
     engouth.f90
     opt6_C.f90
+    matelt_I.f90
+    hfsgg_I.f90
 )
 
 target_link_libraries_Fortran(hfs92mpi PRIVATE
