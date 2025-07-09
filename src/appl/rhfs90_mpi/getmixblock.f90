@@ -35,7 +35,7 @@
 !   D u m m y   A r g u m e n t s
 !-----------------------------------------------
       INTEGER, INTENT(IN)           :: NCI
-      CHARACTER(LEN=24), INTENT(IN) :: NAME
+      CHARACTER(LEN=*), INTENT(IN) :: NAME
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
@@ -47,6 +47,7 @@
 !
 !   The  .mix  file is UNFORMATTED; it must exist
 !
+      ! Build filename with appropriate extension
       K = INDEX(NAME,' ')
       IF (K == 0) THEN
          ! No space found, use the entire trimmed string
@@ -64,13 +65,7 @@
          ENDIF
       ENDIF
       
-      ! For MPI programs, need to look in the parent directory (Serial I/O dir)
-      ! Check if we're in a mpi_tmp subdirectory
-      CALL GETCWD(PWD)
-      IF (INDEX(PWD, 'mpi_tmp') > 0) THEN
-         ! We're in MPI work directory, go back to parent for input files
-         FILNAM = '../../' // TRIM(FILNAM)
-      ENDIF
+      WRITE (ISTDE, *) 'DEBUG: Looking for mixing coefficients file:', TRIM(FILNAM)
       FORM = 'UNFORMATTED'
       STATUS = 'OLD'
 !
