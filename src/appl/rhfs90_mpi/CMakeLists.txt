@@ -10,14 +10,13 @@ add_executable(hfs92mpi
     setdbg.f90
     rinthf_I.f90
     rinthf.f90
-    rint_I.f90
-    rint.f90
     getmixblock_I.f90
     getmixblock.f90
     gethfd_I.f90
     gethfd.f90
     engouth_I.f90
     engouth.f90
+    opt6_C.f90
 )
 
 target_link_libraries_Fortran(hfs92mpi PRIVATE
