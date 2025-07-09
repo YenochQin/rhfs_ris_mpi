@@ -27,25 +27,29 @@
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
-      INTEGER :: I, NCSF, IOS, IERR
+      INTEGER :: I, NCSF, IOS, IERR, K
       LOGICAL :: FOUND
-      CHARACTER :: STR*15, CH*2, LINE3*200
+      CHARACTER :: STR*15, CH*2, LINE3*200, FILNAM*256
 !-----------------------------------------------
 ! Locals
 
-! Look for  <name>
+! Look for  <name>.c (add .c extension)
 
-      INQUIRE(FILE=NAME, EXIST=FOUND)
+      K = INDEX(NAME,' ')
+      IF (K == 0) K = LEN_TRIM(NAME) + 1
+      FILNAM = NAME(1:K-1)//'.c'
+
+      INQUIRE(FILE=FILNAM, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
-         WRITE (6, *) NAME(1:LEN_TRIM(NAME)), ' does not exist'
+         WRITE (6, *) FILNAM(1:LEN_TRIM(FILNAM)), ' does not exist'
          STOP
       ENDIF
 
 ! Open it
 
-      CALL OPENFL (NUNIT, NAME, 'FORMATTED', 'OLD', IERR)
+      CALL OPENFL (NUNIT, FILNAM, 'FORMATTED', 'OLD', IERR)
       IF (IERR == 1) THEN
-         WRITE (6, *) 'Error when opening ', NAME(1:LEN_TRIM(NAME))
+         WRITE (6, *) 'Error when opening ', FILNAM(1:LEN_TRIM(FILNAM))
          STOP
       ENDIF
 
