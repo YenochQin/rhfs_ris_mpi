@@ -42,23 +42,42 @@
       INTEGER :: K, IERR, IOS, NCFTOT, NVECTOT, NVECSIZ, NBLOCK, I, NVECPAT, &
          NCFPAT, NVECSIZPAT, NEAVSUM, JB, NB, NCFBLK, NEVBLK, IATJP, IASPA, J
       REAL(DOUBLE) :: EAVSUM
-      CHARACTER :: FILNAM*256, FORM*11, G92MIX*6, STATUS*3
+      CHARACTER :: FILNAM*256, FORM*11, G92MIX*6, STATUS*3, PWD*256
 !-----------------------------------------------
 !
 !   The  .mix  file is UNFORMATTED; it must exist
 !
       K = INDEX(NAME,' ')
-      IF (NCI == 0) THEN
-         FILNAM = NAME(1:K-1)//'.cm'
+      IF (K == 0) THEN
+         ! No space found, use the entire trimmed string
+         IF (NCI == 0) THEN
+            FILNAM = TRIM(NAME)//'.cm'
+         ELSE
+            FILNAM = TRIM(NAME)//'.m'
+         ENDIF
       ELSE
-         FILNAM = NAME(1:K-1)//'.m'
+         ! Space found, use up to the first space
+         IF (NCI == 0) THEN
+            FILNAM = NAME(1:K-1)//'.cm'
+         ELSE
+            FILNAM = NAME(1:K-1)//'.m'
+         ENDIF
+      ENDIF
+      
+      ! For MPI programs, need to look in the parent directory (Serial I/O dir)
+      ! Check if we're in a mpi_tmp subdirectory
+      CALL GETCWD(PWD)
+      IF (INDEX(PWD, 'mpi_tmp') > 0) THEN
+         ! We're in MPI work directory, go back to parent for input files
+         FILNAM = '../../' // TRIM(FILNAM)
       ENDIF
       FORM = 'UNFORMATTED'
       STATUS = 'OLD'
 !
-      CALL OPENFL (25, FILNAM, FORM, STATUS, IERR)
-      IF (IERR == 1) THEN
-         WRITE (ISTDE, *) 'Error when opening', FILNAM
+      ! Use standard OPEN instead of OPENFL to avoid potential issues
+      OPEN(25, FILE=TRIM(FILNAM), FORM='UNFORMATTED', STATUS='OLD', IOSTAT=IOS)
+      IF (IOS /= 0) THEN
+         WRITE (ISTDE, *) 'Error when opening', TRIM(FILNAM), ' IOS=', IOS
          STOP
       ENDIF
 !

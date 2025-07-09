@@ -45,12 +45,21 @@
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
       LOGICAL            :: YES
-      CHARACTER(LEN=128) :: ISOFILE
+      CHARACTER(LEN=128) :: ISOFILE, PWD
 !-----------------------------------------------
 !
 !   Open, check, load data from, and close the  .iso  file
 !
       ISOFILE = 'isodata'
+      
+      ! For MPI programs, need to look in the parent directory (Serial I/O dir)
+      ! Check if we're in a mpi_tmp subdirectory
+      CALL GETCWD(PWD)
+      IF (INDEX(PWD, 'mpi_tmp') > 0) THEN
+         ! We're in MPI work directory, go back to parent for input files
+         ISOFILE = '../../isodata'
+      ENDIF
+      
       CALL SETISO (ISOFILE)
 !
 !   Determine the physical effects specifications
@@ -145,7 +154,12 @@
 !
 !      CALL SETRWFA(NAME)
 
-      CALL SETRWFA (TRIM(NAME)//'.w')
+      ! Fix path for .w file in MPI environment
+      IF (INDEX(PWD, 'mpi_tmp') > 0) THEN
+         CALL SETRWFA ('../../'//TRIM(NAME)//'.w')
+      ELSE
+         CALL SETRWFA (TRIM(NAME)//'.w')
+      ENDIF
 
 !
       RETURN

@@ -50,6 +50,13 @@
       USE mpi_C
       USE orb_C
       USE def_C, ONLY: NELEC
+      USE EIGV_C
+      USE memory_man
+      USE decide_C
+      USE foparm_C
+      USE nsmdat_C
+      USE prnt_C
+      USE syma_C
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -198,12 +205,48 @@
       IF (myid .EQ. 0) THEN
          CALL GETHFD (NAME)
       ENDIF
+      
+!=======================================================================
+!   Broadcast data from GETHFD to all processes
+!=======================================================================
+      ! Broadcast control variables
+      CALL MPI_Bcast (LFORDR, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (ICCUT, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Broadcast nuclear data
+      CALL MPI_Bcast (SQN, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (DMOMNM, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (QMOMB, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
 !=======================================================================
 !   Get the eigenvectors (only master process) 
 !=======================================================================
       IF (myid .EQ. 0) THEN
          CALL GETMIXBLOCK (NAME, NCI)
+      ENDIF
+
+!=======================================================================
+!   Broadcast eigenvector data from master process to all other processes
+!=======================================================================
+      ! Broadcast basic dimensions first
+      CALL MPI_Bcast (NVEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Allocate arrays on non-master processes
+      IF (myid .NE. 0) THEN
+         CALL ALLOC (EVAL, NVEC, 'EVAL', 'RHFS90MPI')
+         CALL ALLOC (EVEC, NCF*NVEC, 'EVEC', 'RHFS90MPI')
+         CALL ALLOC (IVEC, NVEC, 'IVEC', 'RHFS90MPI')
+         CALL ALLOC (IATJPO, NVEC, 'IATJPO', 'RHFS90MPI')
+         CALL ALLOC (IASPAR, NVEC, 'IASPAR', 'RHFS90MPI')
+      ENDIF
+      
+      ! Broadcast the arrays
+      IF (NVEC > 0) THEN
+         CALL MPI_Bcast (EVAL(1), NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (EVEC(1), NCF*NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (IVEC(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (IATJPO(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (IASPAR(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
       ENDIF
 
 !=======================================================================
