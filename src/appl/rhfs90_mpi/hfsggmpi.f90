@@ -189,8 +189,8 @@
 
 !
          DO IR = 1, NCF
-            ! Progress report every 1000 IRs
-            IF (myid == 0 .AND. MOD(IR, 1000) == 0) THEN
+            ! Progress report every 10000 IRs (reduced frequency)
+            IF (myid == 0 .AND. MOD(IR, 10000) == 0) THEN
                WRITE (6, *) 'Process 0: IC=', IC, 'IR=', IR, 'of', NCF
             ENDIF
 !
