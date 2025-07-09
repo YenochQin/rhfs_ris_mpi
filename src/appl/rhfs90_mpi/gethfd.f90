@@ -40,17 +40,28 @@
 !-----------------------------------------------
 !   D u m m y   A r g u m e n t s
 !-----------------------------------------------
-      CHARACTER(LEN=24), INTENT(IN) :: NAME
+      CHARACTER(LEN=*), INTENT(IN) :: NAME
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
       LOGICAL            :: YES
-      CHARACTER(LEN=128) :: ISOFILE, PWD
+      CHARACTER(LEN=128) :: ISOFILE, PWD, DIRNAME
+      INTEGER            :: LAST_SLASH
 !-----------------------------------------------
 !
 !   Open, check, load data from, and close the  .iso  file
 !
-      ISOFILE = 'isodata'
+      ! Extract directory from NAME to find isodata in the same directory
+      LAST_SLASH = INDEX(NAME, '/', .TRUE.)
+      IF (LAST_SLASH > 0) THEN
+         ! NAME contains a path, extract directory
+         DIRNAME = NAME(1:LAST_SLASH)
+         ISOFILE = TRIM(DIRNAME) // 'isodata'
+      ELSE
+         ! NAME is just a filename, use current directory
+         ISOFILE = 'isodata'
+      ENDIF
+      
       CALL SETISO (ISOFILE)
 !
 !   Determine the physical effects specifications
