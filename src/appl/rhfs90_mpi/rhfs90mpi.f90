@@ -151,7 +151,7 @@
       ENDIF
       
       CALL MPI_Bcast (lenname,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (NAME,LEN(NAME),MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAME,24,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (NCI,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================

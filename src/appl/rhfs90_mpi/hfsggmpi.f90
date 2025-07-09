@@ -42,6 +42,7 @@
       USE prnt_C
       USE OPT6_C
       USE syma_C
+      USE STAT_C, ONLY: JCUPA
       USE mpi_C
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
@@ -205,13 +206,13 @@
                CALL MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
             ENDIF
             
-            ! Add try-catch like error handling for ISPAR/ITJPO calls
-            IF (IC <= 0 .OR. IC > SIZE(JCUPA, 2)) THEN
-               WRITE (6, *) 'ERROR: Process', myid, 'IC index error for JCUPA:', IC, SIZE(JCUPA, 2)
+            ! Validate CSF indices before calling ISPAR/ITJPO
+            IF (IC <= 0 .OR. IC > NCF) THEN
+               WRITE (6, *) 'ERROR: Process', myid, 'IC index out of range:', IC, NCF
                CALL MPI_ABORT(MPI_COMM_WORLD, 2, ierr)
             ENDIF
-            IF (IR <= 0 .OR. IR > SIZE(JCUPA, 2)) THEN
-               WRITE (6, *) 'ERROR: Process', myid, 'IR index error for JCUPA:', IR, SIZE(JCUPA, 2)
+            IF (IR <= 0 .OR. IR > NCF) THEN
+               WRITE (6, *) 'ERROR: Process', myid, 'IR index out of range:', IR, NCF
                CALL MPI_ABORT(MPI_COMM_WORLD, 3, ierr)
             ENDIF
             
