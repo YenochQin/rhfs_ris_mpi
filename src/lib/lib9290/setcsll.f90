@@ -61,7 +61,10 @@
 
 ! Check the first record of the file; if not as expected, stop
 
+      WRITE (6, *) 'DEBUG: About to read first line from unit', NUNIT
       READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
+      WRITE (6, *) 'DEBUG: After read - IOS =', IOS
+      WRITE (6, *) 'DEBUG: STR = "', STR, '"'
       IF (IOS/=0 .OR. STR/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
          ! Don't close the file here - let the calling function handle it
