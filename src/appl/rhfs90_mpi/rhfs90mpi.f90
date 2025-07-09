@@ -49,7 +49,7 @@
       USE iounit_C
       USE mpi_C
       USE orb_C
-      USE def_C, ONLY: NELEC
+      USE def_C, ONLY: NELEC, ACCY, C, Z, CVAC, EMN, EMPAM, RBCM, AUCM, CCMS, B1
       USE EIGV_C
       USE memory_man
       USE decide_C
@@ -57,6 +57,10 @@
       USE nsmdat_C
       USE prnt_C
       USE syma_C
+      USE grid_C
+      USE wave_C
+      USE npar_C
+      USE wfac_C
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -71,6 +75,8 @@
       USE strsum_I
       USE factt_I
       USE hfsggmpi_I
+      USE cslhmpi_I
+      USE lodrwfmpi_I
       IMPLICIT NONE
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
@@ -79,6 +85,7 @@
       INTEGER   :: NCOUNT1
       LOGICAL   :: YES
       CHARACTER :: NAME*24, NAMESAVE*24
+      CHARACTER(LEN=8), DIMENSION(50) :: IDBLK
       CHARACTER(LEN=128) :: STARTDIR, TMPDIR, PERMDIR
       CHARACTER(LEN=80)  :: MSG
       CHARACTER(LEN=3)   :: IDSTRING
@@ -143,7 +150,7 @@
       ENDIF
       
       CALL MPI_Bcast (lenname,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (NAME,24,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAME,LEN(NAME),MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (NCI,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================
@@ -173,30 +180,22 @@
       IF (myid .EQ. 0) CALL SETSUM (NAME, NCI)
 
 !=======================================================================
-!   Load configuration data - use original SETCSLA like in hfs92.f90
-!   Only master process loads data, then broadcast to other processes
+!   Load configuration data using cslhmpi which handles MPI broadcasting
+!   This function properly allocates arrays on all processes before broadcasting
 !=======================================================================
+      ! cslhmpi expects the base name without extension (it adds .c internally)
+      ! Remove .c extension if present
+      IF (lenname >= 2 .AND. NAME(lenname-1:lenname) == '.c') THEN
+         CALL cslhmpi (NAME(1:lenname-2), NCORE_NOT_USED, 50, IDBLK)
+      ELSE
+         CALL cslhmpi (NAME(1:lenname), NCORE_NOT_USED, 50, IDBLK)
+      ENDIF
+      
+      ! Print summary information on master process
       IF (myid .EQ. 0) THEN
-         CALL SETCSLA (NAME, NCORE_NOT_USED)
-         ! Print summary information
          WRITE (ISTDE, *) 'There are', NW, 'relativistic subshells;'
          WRITE (ISTDE, *) 'There are', NCF, 'relativistic CSFs;'
          WRITE (ISTDE, *) '... load complete;'
-      ENDIF
-      
-      ! Broadcast the loaded data to all other processes
-      ! These arrays are defined in orb_C module and need to be shared
-      CALL MPI_Bcast (nw,    1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (ncf,   1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr) 
-      CALL MPI_Bcast (nelec, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      
-      ! Broadcast orbital information if nw > 0
-      IF (nw > 0) THEN
-         CALL MPI_Bcast (np(1),  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-         CALL MPI_Bcast (nak(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-         CALL MPI_Bcast (nkl(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-         CALL MPI_Bcast (nkj(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-         CALL MPI_Bcast (nh(1), 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       ENDIF
 
 !=======================================================================
@@ -217,6 +216,28 @@
       CALL MPI_Bcast (SQN, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
       CALL MPI_Bcast (DMOMNM, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
       CALL MPI_Bcast (QMOMB, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (HFSI, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (HFSD, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (HFSQ, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Broadcast nuclear parameter data
+      CALL MPI_Bcast (NPARM, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (PARM(1), 2, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Broadcast wave factor data
+      CALL MPI_Bcast (WFACT, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Note: Physical constants are now available through def_C module import
+      
+!=======================================================================
+!   Load wavefunction data using MPI-aware function
+!=======================================================================
+      CALL lodrwfmpi (K)
+      IF (K .NE. 0) THEN
+         IF (myid .EQ. 0) WRITE (ISTDE, *) 'Error loading wavefunction data'
+         CALL MPI_FINALIZE(ierr)
+         STOP
+      ENDIF
 
 !=======================================================================
 !   Get the eigenvectors (only master process) 
@@ -232,7 +253,7 @@
       CALL MPI_Bcast (NVEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
       
       ! Allocate arrays on non-master processes
-      IF (myid .NE. 0) THEN
+      IF (myid .NE. 0 .AND. NVEC > 0) THEN
          CALL ALLOC (EVAL, NVEC, 'EVAL', 'RHFS90MPI')
          CALL ALLOC (EVEC, NCF*NVEC, 'EVEC', 'RHFS90MPI')
          CALL ALLOC (IVEC, NVEC, 'IVEC', 'RHFS90MPI')
