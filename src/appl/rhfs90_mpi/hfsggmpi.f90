@@ -85,34 +85,53 @@
 !
 !   Allocate storage for local arrays (each process)
 !
+      WRITE (6, *) 'DEBUG: Process', myid, 'starting HFSGGMPI'
+      WRITE (6, *) 'DEBUG: NVEC =', NVEC, 'NVEC*NVEC =', NVEC*NVEC
       CALL ALLOC (HFC_LOCAL, 5, NVEC*NVEC, 'HFC_LOCAL', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated HFC_LOCAL'
       CALL ALLOC (GJC_LOCAL, NVEC*NVEC, 'GJC_LOCAL', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated GJC_LOCAL'
       CALL ALLOC (DGJC_LOCAL, NVEC*NVEC, 'DGJC_LOCAL', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated DGJC_LOCAL'
 
 !   Allocate storage for global arrays (result containers)
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocating global arrays'
       CALL ALLOC (HFC, 5, NVEC*NVEC, 'HFC', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated HFC'
       CALL ALLOC (GJC, NVEC*NVEC, 'GJC', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated GJC'
       CALL ALLOC (DGJC, NVEC*NVEC, 'DGJC', 'HFSMPI')
+      WRITE (6, *) 'DEBUG: Process', myid, 'allocated DGJC'
 
 !
 !   Initialise local arrays
 !
-      HFC_LOCAL(:,:NVEC*NVEC) = 0.0D00
-      GJC_LOCAL(:NVEC*NVEC) = 0.0D00
-      DGJC_LOCAL(:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing HFC_LOCAL'
+      HFC_LOCAL(:,1:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing GJC_LOCAL'
+      GJC_LOCAL(1:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing DGJC_LOCAL'
+      DGJC_LOCAL(1:NVEC*NVEC) = 0.0D00
 
 !   Initialise global arrays
-      HFC(:,:NVEC*NVEC) = 0.0D00
-      GJC(:NVEC*NVEC) = 0.0D00
-      DGJC(:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing HFC'
+      HFC(:,1:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing GJC'
+      GJC(1:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'initializing DGJC'
+      DGJC(1:NVEC*NVEC) = 0.0D00
+      WRITE (6, *) 'DEBUG: Process', myid, 'arrays initialized'
 
 !
 !   Calculate and save the radial integrals and angular
 !   matrix elements for the two multipolarities
 !   (This is done on all processes since the data is needed by all)
 !
+      WRITE (6, *) 'DEBUG: Process', myid, 'starting radial integral calculation'
       DO KT = 1, 2
+         WRITE (6, *) 'DEBUG: Process', myid, 'KT=', KT
          DO I = 1, NW
+            IF (MOD(I, 5) == 1) WRITE (6, *) 'DEBUG: Process', myid, 'I=', I, 'NW=', NW
             DO J = 1, NW
                IF (KT == 1) THEN
                   RINTME(KT,I,J) = RINTHF(I,J,-2)
@@ -129,10 +148,12 @@
             END DO
          END DO
       END DO
+      WRITE (6, *) 'DEBUG: Process', myid, 'finished radial integral calculation'
 
 !
 !   Set the parity of the one-body operators
 !
+      WRITE (6, *) 'DEBUG: Process', myid, 'setting IPT'
       IPT = 1
 
 !=======================================================================
@@ -141,6 +162,7 @@
 !   Each process handles IC values: myid+1, myid+1+nprocs, myid+1+2*nprocs, ...
 !=======================================================================
 
+      WRITE (6, *) 'DEBUG: Process', myid, 'about to start main loop'
       IF (myid == 0) THEN
          WRITE (6, *) 'Starting parallel HFS calculation with ', nprocs, ' processes'
       ENDIF
@@ -150,7 +172,11 @@
 !   diagonal and off-diagonal hyperfine constants
 !   MPI Parallel version: distribute IC loop among processes
 !
+      WRITE (6, *) 'DEBUG: Process', myid, 'entering main loop, NCF=', NCF
+      
       DO IC = myid + 1, NCF, nprocs
+         ! Reduce debug output frequency to avoid overwhelming output
+         IF (MOD(IC, 50) == 0) WRITE (6, *) 'DEBUG: Process', myid, 'IC=', IC
 !
 !   Output IC on the screen to show how far the calculation has proceeded
 !   (only from process 0 to avoid cluttering output)
@@ -162,6 +188,10 @@
 
 !
          DO IR = 1, NCF
+            ! Progress report every 1000 IRs
+            IF (myid == 0 .AND. MOD(IR, 1000) == 0) THEN
+               WRITE (6, *) 'Process 0: IC=', IC, 'IR=', IR, 'of', NCF
+            ENDIF
 !
 !   If LFORDR is .TRUE., a `first order' calculation is indicated;
 !   only the CSFs with serial numbers exceeding IC are treated specially
@@ -169,6 +199,22 @@
 !
             IF (LFORDR .AND. IC>ICCUT .AND. IC/=IR) CYCLE
 !
+            ! Add bounds checking
+            IF (IC < 1 .OR. IC > NCF .OR. IR < 1 .OR. IR > NCF) THEN
+               WRITE (6, *) 'ERROR: Process', myid, 'IC or IR out of bounds:', IC, IR, NCF
+               CALL MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
+            ENDIF
+            
+            ! Add try-catch like error handling for ISPAR/ITJPO calls
+            IF (IC <= 0 .OR. IC > SIZE(JCUPA, 2)) THEN
+               WRITE (6, *) 'ERROR: Process', myid, 'IC index error for JCUPA:', IC, SIZE(JCUPA, 2)
+               CALL MPI_ABORT(MPI_COMM_WORLD, 2, ierr)
+            ENDIF
+            IF (IR <= 0 .OR. IR > SIZE(JCUPA, 2)) THEN
+               WRITE (6, *) 'ERROR: Process', myid, 'IR index error for JCUPA:', IR, SIZE(JCUPA, 2)
+               CALL MPI_ABORT(MPI_COMM_WORLD, 3, ierr)
+            ENDIF
+            
             ISPARC = ISPAR(IC)
             ITJPOC = ITJPO(IC)
             ITJPOR = ITJPO(IR)

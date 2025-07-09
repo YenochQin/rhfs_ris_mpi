@@ -24,6 +24,8 @@
       USE HBLOCK_C
       USE def_C, ONLY: EMN,IONCTY,NELEC,Z
       USE ORB_C, NCFTOT=>NCF
+      USE parameter_def, ONLY: NNNW
+      USE STAT_C, ONLY: JCUPA
 !
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
@@ -59,6 +61,8 @@
          !..Load header of <name> file
          WRITE (6, *) 'DEBUG CSLHMPI: About to call LODCSH'
          CALL LODCSH (21, NCORE)
+         WRITE (6, *) 'DEBUG CSLHMPI: LODCSH completed'
+         WRITE (6, *) 'DEBUG CSLHMPI: After LODCSH, JCUPA associated?', ASSOCIATED(JCUPA)
       ENDIF
 
 ! Broadcast results to other nodes. ncfblk should be allocated
@@ -83,6 +87,17 @@
       CALL MPI_Bcast (nkl,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (nkj,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (nh, 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+
+!     Simple solution: allocate JCUPA on all processes and broadcast
+      IF (myid /= 0) THEN
+         CALL ALLOC (JCUPA, NNNW, NCFTOT, 'JCUPA', 'CSLHMPI')
+         JCUPA = 0  ! Initialize with zeros
+      ENDIF
+      
+      ! Only broadcast if process 0 has JCUPA allocated
+      IF (myid .EQ. 0 .AND. ASSOCIATED(JCUPA)) THEN
+         CALL MPI_Bcast (JCUPA, NNNW*NCFTOT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr)
+      ENDIF
 
       RETURN
       END SUBROUTINE CSLHMPI

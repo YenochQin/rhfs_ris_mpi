@@ -29,7 +29,7 @@
 !-----------------------------------------------
       INTEGER :: I, NCSF, IOS, IERR, K
       LOGICAL :: FOUND
-      CHARACTER :: STR*15, CH*2, LINE3*200, FILNAM*256
+      CHARACTER :: STR*15, CH*2, LINE3*200, FILNAM*256, PWD*512
 !-----------------------------------------------
 ! Locals
 
@@ -39,9 +39,19 @@
       IF (K == 0) K = LEN_TRIM(NAME) + 1
       FILNAM = NAME(1:K-1)//'.c'
 
+      ! Try to find file in parent directory (go up from mpi_tmp/xxx)
+      CALL GETCWD(PWD)
+      ! First try current directory
       INQUIRE(FILE=FILNAM, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
-         WRITE (6, *) FILNAM(1:LEN_TRIM(FILNAM)), ' does not exist'
+         ! Try parent directory (../../filename)
+         FILNAM = '../../' // NAME(1:K-1) // '.c'
+         INQUIRE(FILE=FILNAM, EXIST=FOUND)
+      ENDIF
+      IF (.NOT.FOUND) THEN
+         WRITE (6, *) NAME(1:K-1) // '.c', ' does not exist'
+         WRITE (6, *) 'Searched in: ', TRIM(PWD)
+         WRITE (6, *) 'And in: ', TRIM(PWD) // '/../../'
          STOP
       ENDIF
 
@@ -57,8 +67,8 @@
 
 ! Check the first record of the file; if not as expected, stop
 
-      READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
-      IF (IOS/=0 .OR. STR/='Core subshells:') THEN
+      READ (NUNIT, '(A)', IOSTAT=IOS) STR
+      IF (IOS/=0 .OR. TRIM(STR)/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
          ! Don't close the file here - let the calling function handle it
          ! CLOSE(NUNIT)

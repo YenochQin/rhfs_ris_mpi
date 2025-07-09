@@ -36,15 +36,19 @@
       CHARACTER (LEN = 6) :: G92RWF
 !-----------------------------------------------
       IF (myid .EQ. 0) THEN
-         CALL openfl (23, name, 'UNFORMATTED', 'OLD', ierror)
+         ! Try with ../../ prefix first (like we do for .c files)
+         CALL openfl (23, '../../' // name, 'UNFORMATTED', 'OLD', ierror)
          IF (ierror .EQ. 1) THEN
-            WRITE (istde,*) 'Error opening', name(1:LEN_TRIM (name))
-            STOP
+            CALL openfl (23, name, 'UNFORMATTED', 'OLD', ierror)
+            IF (ierror .EQ. 1) THEN
+               WRITE (istde,*) 'Error opening', name(1:LEN_TRIM (name))
+               STOP
+            ENDIF
          ENDIF
 
 !   Check the file; if not as expected, stop.
 
-         READ (23,IOSTAT = IOS) G92RWF
+         read (23,IOSTAT = IOS) G92RWF
          IF ((IOS .NE. 0) .OR. (G92RWF .NE. 'G92RWF')) THEN
             WRITE (istde,*) 'This is not a Radial WaveFunction File;'
             CLOSE (23)

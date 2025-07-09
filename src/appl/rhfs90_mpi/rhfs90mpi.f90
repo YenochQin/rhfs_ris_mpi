@@ -77,6 +77,7 @@
       USE hfsggmpi_I
       USE cslhmpi_I
       USE lodrwfmpi_I
+      USE setrwfmpi_I
       IMPLICIT NONE
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
@@ -229,15 +230,30 @@
       
       ! Note: Physical constants are now available through def_C module import
       
+      ! Broadcast grid data (from RADGRD called in GETHFD)
+      CALL MPI_Bcast (N, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (RNT, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (H, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (HP, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      IF (N > 0) THEN
+         ! Grid arrays are statically allocated in grid_C module, just broadcast data
+         CALL MPI_Bcast (R(1), N, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (RP(1), N, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (RPOR(1), N, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      ENDIF
+      
 !=======================================================================
 !   Load wavefunction data using MPI-aware function
 !=======================================================================
-      CALL lodrwfmpi (K)
-      IF (K .NE. 0) THEN
-         IF (myid .EQ. 0) WRITE (ISTDE, *) 'Error loading wavefunction data'
-         CALL MPI_FINALIZE(ierr)
-         STOP
+      ! setrwfmpi opens .w file and calls lodrwfmpi internally
+      ! Check if filename ends with .c extension and build .w filename
+      IF (lenname >= 2 .AND. NAME(lenname-1:lenname) == '.c') THEN
+         CALL setrwfmpi (NAME(1:lenname-2) // '.w')
+      ELSE
+         CALL setrwfmpi (NAME(1:lenname) // '.w')
       ENDIF
+      
+      IF (myid .EQ. 0) WRITE (ISTDE, *) 'Wavefunction data loaded successfully'
 
 !=======================================================================
 !   Get the eigenvectors (only master process) 
@@ -251,6 +267,7 @@
 !=======================================================================
       ! Broadcast basic dimensions first
       CALL MPI_Bcast (NVEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      IF (myid .EQ. 0) WRITE (6, *) 'DEBUG: NVEC = ', NVEC
       
       ! Allocate arrays on non-master processes
       IF (myid .NE. 0 .AND. NVEC > 0) THEN
@@ -283,6 +300,13 @@
 !=======================================================================
 !   Proceed with the HFS calculation (MPI parallel version)
 !=======================================================================
+      IF (NVEC <= 0) THEN
+         IF (myid .EQ. 0) WRITE (ISTDE, *) 'Error: NVEC = ', NVEC
+         CALL MPI_FINALIZE(ierr)
+         STOP
+      ENDIF
+      
+      IF (myid .EQ. 0) WRITE (ISTDE, *) 'Starting parallel HFS calculation with', nprocs, 'processes'
       CALL HFSGGMPI
 
 !=======================================================================
