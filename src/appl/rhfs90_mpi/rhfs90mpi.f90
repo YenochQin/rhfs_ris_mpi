@@ -138,11 +138,8 @@
             GO TO 10
          ENDIF
          NAMESAVE = NAME
-         
-         ! Form the full name of the files used on node-0 (like RCI90)
          lenname = LEN_TRIM (NAME)
-         NAME = TRIM(PERMDIR) // '/' // NAME(1:lenname)
-         lenname = LEN_TRIM(NAME)
+         ! Don't modify NAME path - let user provide correct path or rely on working directory
          
          WRITE (ISTDE, *)
          WRITE (ISTDE, *) 'Mixing coefficients from a CI calc.?'
@@ -188,9 +185,9 @@
 !   Load configuration data using cslhmpi which handles MPI broadcasting
 !   This function properly allocates arrays on all processes before broadcasting
 !=======================================================================
-      ! cslhmpi expects the complete filename including .c extension
-      ! Follow RCI90 pattern exactly
-      CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
+      ! cslhmpi/SETCSLL will add .c extension automatically
+      ! Pass the base name without extension
+      CALL cslhmpi (NAME(1:lenname), NCORE_NOT_USED, 50, IDBLK)
       
       ! Print summary information on master process
       IF (myid .EQ. 0) THEN
