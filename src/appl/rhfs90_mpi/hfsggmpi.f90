@@ -189,10 +189,7 @@
 
 !
          DO IR = 1, NCF
-            ! Progress report every 10000 IRs (reduced frequency)
-            IF (myid == 0 .AND. MOD(IR, 10000) == 0) THEN
-               WRITE (6, *) 'Process 0: IC=', IC, 'IR=', IR, 'of', NCF
-            ENDIF
+            ! IR progress output removed - only keep column completion messages
 !
 !   If LFORDR is .TRUE., a `first order' calculation is indicated;
 !   only the CSFs with serial numbers exceeding IC are treated specially
