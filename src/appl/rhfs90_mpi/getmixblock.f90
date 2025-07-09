@@ -48,24 +48,12 @@
 !   The  .mix  file is UNFORMATTED; it must exist
 !
       ! Build filename with appropriate extension
-      K = INDEX(NAME,' ')
-      IF (K == 0) THEN
-         ! No space found, use the entire trimmed string
-         IF (NCI == 0) THEN
-            FILNAM = TRIM(NAME)//'.cm'
-         ELSE
-            FILNAM = TRIM(NAME)//'.m'
-         ENDIF
+      ! NAME already contains the full path from permdir
+      IF (NCI == 0) THEN
+         FILNAM = TRIM(NAME)//'.cm'
       ELSE
-         ! Space found, use up to the first space
-         IF (NCI == 0) THEN
-            FILNAM = NAME(1:K-1)//'.cm'
-         ELSE
-            FILNAM = NAME(1:K-1)//'.m'
-         ENDIF
+         FILNAM = TRIM(NAME)//'.m'
       ENDIF
-      
-      WRITE (ISTDE, *) 'DEBUG: Looking for mixing coefficients file:', TRIM(FILNAM)
       FORM = 'UNFORMATTED'
       STATUS = 'OLD'
 !
