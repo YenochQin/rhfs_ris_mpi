@@ -1,4 +1,4 @@
-add_library(librang90 STATIC
+add_library(rang90 STATIC
     Gracah1.f90
     Gracah1_I.f90
     jthn.f90
@@ -178,6 +178,6 @@ add_library(librang90 STATIC
     suwjj.f90
     suwjj_I.f90
 )
-setup_fortran_modules(librang90)
-target_link_libraries_Fortran(librang90 PRIVATE lib9290)
-install(TARGETS librang90 DESTINATION lib)
+setup_fortran_modules(rang90)
+target_link_libraries_Fortran(rang90 PRIVATE mod 9290 mcp90)
+install(TARGETS rang90 DESTINATION lib/)

@@ -1,4 +1,4 @@
-add_library(libmod STATIC
+add_library(mod STATIC
     parameter_def_M.f90
     vast_kind_param_M.f90
     memory_man.f90
@@ -104,5 +104,5 @@ add_library(libmod STATIC
     wfac_C.f90
     whfrom_C.f90
 )
-setup_fortran_modules(libmod)
-install(TARGETS libmod DESTINATION lib)
+setup_fortran_modules(mod)
+install(TARGETS mod DESTINATION lib/)

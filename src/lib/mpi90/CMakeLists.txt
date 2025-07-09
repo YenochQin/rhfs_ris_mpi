@@ -1,4 +1,4 @@
-add_library(mpi90 STATIC
+add_library(mpiu90 STATIC
     mpi_C.f90
     mpiu.f90
     cpath.f90
@@ -24,14 +24,12 @@ add_library(mpi90 STATIC
     sys_mkdir.f90
     sys_mkdir_I.f90
 )
-setup_fortran_modules(mpi90)
-target_link_libraries_Fortran(mpi90 PRIVATE lib9290 libmod)
-target_include_directories(mpi90 PRIVATE ${MPI_Fortran_INCLUDE_PATH})
-target_link_libraries(mpi90 PRIVATE ${MPI_Fortran_LIBRARIES})
-
-set_target_properties(mpi90 PROPERTIES
+setup_fortran_modules(mpiu90)
+target_link_libraries_Fortran(mpiu90 PRIVATE mod 9290)
+target_include_directories(mpiu90 PRIVATE ${MPI_Fortran_INCLUDE_PATH})
+target_link_libraries(mpiu90 PRIVATE ${MPI_Fortran_LIBRARIES})
+set_target_properties(mpiu90 PROPERTIES
   COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}"
   LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}"
 )
-
-install(TARGETS mpi90 DESTINATION lib)
+install(TARGETS mpiu90 DESTINATION lib/)
