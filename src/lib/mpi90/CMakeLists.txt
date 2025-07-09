@@ -25,9 +25,16 @@ add_library(mpi90 STATIC
     sys_mkdir_I.f90
 )
 setup_fortran_modules(mpi90)
-target_link_libraries_Fortran(mpi90 PRIVATE lib9290)
+
+# Explicitly add the include directory for lib9290 modules
+target_include_directories(mpi90 PRIVATE ${PROJECT_BINARY_DIR}/modules/lib9290)
+
+# Link the library targets
+target_link_libraries(mpi90 PRIVATE lib9290)
+
 target_include_directories(mpi90 PRIVATE ${MPI_Fortran_INCLUDE_PATH})
 target_link_libraries(mpi90 PRIVATE ${MPI_Fortran_LIBRARIES})
+
 set_target_properties(mpi90 PROPERTIES
   COMPILE_FLAGS "${MPI_Fortran_COMPILE_FLAGS}"
   LINK_FLAGS "${MPI_Fortran_LINK_FLAGS}"
