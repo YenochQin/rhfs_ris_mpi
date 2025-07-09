@@ -50,7 +50,6 @@
       USE mpi_C
       USE orb_C
       USE def_C, ONLY: NELEC
-      USE memory_man
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -172,25 +171,26 @@
 !=======================================================================
       IF (myid .EQ. 0) THEN
          CALL SETCSLA (NAME, NCORE_NOT_USED)
+         ! Print summary information
+         WRITE (ISTDE, *) 'There are', NW, 'relativistic subshells;'
+         WRITE (ISTDE, *) 'There are', NCF, 'relativistic CSFs;'
+         WRITE (ISTDE, *) '... load complete;'
       ENDIF
       
       ! Broadcast the loaded data to all other processes
+      ! These arrays are defined in orb_C module and need to be shared
       CALL MPI_Bcast (nw,    1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (ncf,   1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (ncf,   1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr) 
       CALL MPI_Bcast (nelec, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      IF (myid /= 0) THEN
-         ! Allocate arrays on other processes
-         CALL ALLOC (np,  nw, 'np',  'rhfs90mpi')
-         CALL ALLOC (nak, nw, 'nak', 'rhfs90mpi')
-         CALL ALLOC (nkl, nw, 'nkl', 'rhfs90mpi')
-         CALL ALLOC (nkj, nw, 'nkj', 'rhfs90mpi')
-         CALL ALLOC (nh,  2*nw, 'nh', 'rhfs90mpi')
+      
+      ! Broadcast orbital information if nw > 0
+      IF (nw > 0) THEN
+         CALL MPI_Bcast (np(1),  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (nak(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (nkl(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (nkj(1), nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (nh(1), 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       ENDIF
-      CALL MPI_Bcast (np,   nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nak,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nkl,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nkj,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (nh, 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================
 !   Get the remaining information (only master process)
