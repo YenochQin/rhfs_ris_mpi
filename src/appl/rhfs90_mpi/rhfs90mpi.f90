@@ -50,6 +50,7 @@
       USE mpi_C
       USE orb_C
       USE def_C, ONLY: NELEC
+      USE memory_man
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -58,7 +59,7 @@
       USE setmc_I
       USE setcon_I
       USE setsum_I
-      USE cslhmpi_I
+      USE setcsla_I
       USE gethfd_I
       USE getmixblock_I
       USE strsum_I
@@ -75,7 +76,6 @@
       CHARACTER(LEN=128) :: STARTDIR, TMPDIR, PERMDIR
       CHARACTER(LEN=80)  :: MSG
       CHARACTER(LEN=3)   :: IDSTRING
-      CHARACTER(LEN=8)   :: DUMMY_IDBLK(1)
 !-----------------------------------------------
 !=======================================================================
 !  Start mpi --- get processor info: myid, nprocs, host name; and print
@@ -167,12 +167,30 @@
       IF (myid .EQ. 0) CALL SETSUM (NAME, NCI)
 
 !=======================================================================
-!   Load configuration data using MPI-aware function
-!   This function handles all file I/O and data broadcasting automatically
+!   Load configuration data - use original SETCSLA like in hfs92.f90
+!   Only master process loads data, then broadcast to other processes
 !=======================================================================
-      ! Use MPI version that handles file reading and data broadcasting
-      DUMMY_IDBLK(1) = 'DEFAULT '
-      CALL CSLHMPI (NAME, NCORE_NOT_USED, 1, DUMMY_IDBLK)
+      IF (myid .EQ. 0) THEN
+         CALL SETCSLA (NAME, NCORE_NOT_USED)
+      ENDIF
+      
+      ! Broadcast the loaded data to all other processes
+      CALL MPI_Bcast (nw,    1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (ncf,   1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (nelec, 1, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      IF (myid /= 0) THEN
+         ! Allocate arrays on other processes
+         CALL ALLOC (np,  nw, 'np',  'rhfs90mpi')
+         CALL ALLOC (nak, nw, 'nak', 'rhfs90mpi')
+         CALL ALLOC (nkl, nw, 'nkl', 'rhfs90mpi')
+         CALL ALLOC (nkj, nw, 'nkj', 'rhfs90mpi')
+         CALL ALLOC (nh,  2*nw, 'nh', 'rhfs90mpi')
+      ENDIF
+      CALL MPI_Bcast (np,   nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (nak,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (nkl,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (nkj,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (nh, 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================
 !   Get the remaining information (only master process)
