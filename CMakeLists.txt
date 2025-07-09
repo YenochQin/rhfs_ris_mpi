@@ -106,7 +106,8 @@ set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 #
 #     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgfortran")
 #
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-automatic")
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-automatic")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-automatic -fallow-argument-mismatch")
 
 message("Compiler configuration for rhfs90_mpi build:")
 message("* CMAKE_BUILD_TYPE:                ${CMAKE_BUILD_TYPE}")

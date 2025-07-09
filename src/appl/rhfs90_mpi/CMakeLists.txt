@@ -5,6 +5,20 @@ add_executable(rhfs90mpi
     rhfs90mpi.f90
     hfsggmpi.f90
     hfsggmpi_I.f90
+    setdbg.f90
+    setdbg_I.f90
+    setsum.f90
+    setsum_I.f90
+    gethfd.f90
+    gethfd_I.f90
+    getmixblock.f90
+    getmixblock_I.f90
+    strsum.f90
+    strsum_I.f90
+    matelt.f90
+    matelt_I.f90
+    rinthf.f90
+    rinthf_I.f90
 )
 
 setup_fortran_modules(rhfs90mpi)
