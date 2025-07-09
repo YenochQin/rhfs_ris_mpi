@@ -39,18 +39,19 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-automatic -fallow-argument-
 
 
 find_package(MPI REQUIRED)
-if(MPI_Fortran_FOUND)
-    message(STATUS "MPI Fortran found, building MPI-dependent libraries and programs.")
-    add_subdirectory("src/lib/mpi90")
-else()
-    message(FATAL_ERROR "MPI Fortran libraries not found. This project requires MPI.")
-endif()
 
 add_subdirectory("src/lib/libmod")
 add_subdirectory("src/lib/lib9290")
 add_subdirectory("src/lib/libdvd90")
 add_subdirectory("src/lib/libmcp90")
 add_subdirectory("src/lib/librang90")
+
+if(MPI_Fortran_FOUND)
+    message(STATUS "MPI Fortran found, building MPI-dependent libraries and programs.")
+    add_subdirectory("src/lib/mpi90")
+else()
+    message(FATAL_ERROR "MPI Fortran libraries not found. This project requires MPI.")
+endif()
 
 add_subdirectory("src/appl/rhfs90_mpi")
 add_subdirectory("src/appl/ris4_mpi")
