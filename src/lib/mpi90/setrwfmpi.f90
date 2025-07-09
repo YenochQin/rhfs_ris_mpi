@@ -36,6 +36,7 @@
       CHARACTER (LEN = 6) :: G92RWF
 !-----------------------------------------------
       IF (myid .EQ. 0) THEN
+         WRITE (istde,*) 'DEBUG: Looking for wavefunction file:', TRIM(name)
          CALL openfl (23, name, 'UNFORMATTED', 'OLD', ierror)
          IF (ierror .EQ. 1) THEN
             WRITE (istde,*) 'Error opening', name(1:LEN_TRIM (name))
@@ -47,6 +48,9 @@
          READ (23,IOSTAT = IOS) G92RWF
          IF ((IOS .NE. 0) .OR. (G92RWF .NE. 'G92RWF')) THEN
             WRITE (istde,*) 'This is not a Radial WaveFunction File;'
+            WRITE (istde,*) 'DEBUG: Expected: G92RWF'
+            WRITE (istde,*) 'DEBUG: Found:', G92RWF
+            WRITE (istde,*) 'DEBUG: IOSTAT:', IOS
             CLOSE (23)
             STOP
          ENDIF
