@@ -27,6 +27,7 @@ setup_fortran_modules(rhfs90mpi)
 target_link_libraries_Fortran(rhfs90mpi PRIVATE 
     mod 
     9290 
+    rang90 
     mpiu90
 )
 
