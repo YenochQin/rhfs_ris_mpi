@@ -62,7 +62,8 @@
       USE npar_C
       USE wfac_C
       USE parameter_def, ONLY: NNNW
-      USE STAT_C, ONLY: JCUPA
+      USE STAT_C, ONLY: JCUPA, JQSA
+      USE ORB_C, ONLY: IQA
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -200,10 +201,12 @@
          WRITE (ISTDE, *) '... load complete;'
       ENDIF
       
-      ! Allocate JCUPA array on all processes following rangular90_mpi pattern
+      ! Allocate IQA, JQSA, and JCUPA arrays on all processes following rangular90_mpi pattern
+      CALL ALLOC (IQA, NNNW, NCF, 'IQA', 'RHFS90MPI')
+      CALL ALLOC (JQSA, NNNW, 3, NCF, 'JQSA', 'RHFS90MPI')
       CALL ALLOC (JCUPA, NNNW, NCF, 'JCUPA', 'RHFS90MPI')
       
-      ! Load CSL data and broadcast JCUPA using LODCSLmpi
+      ! Load CSL data and broadcast all arrays using LODCSLmpi
       CALL LODCSLmpi (21, NCORE_NOT_USED, -119)
 
 !=======================================================================

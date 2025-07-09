@@ -43,23 +43,34 @@
 
 ! Construct mpi data type for Integer*1 and then broadcast.
 
-!cjb mpix_bytes
-!cjb if your compiler or your MPI does not accept type MPIX_INT1
-!cjb try standard MPI type MPI_INTEGER1
-      CALL mpix_bytes (1, MPIX_INT1, ierr)
-!     CALL MPI_Type_create_f90_integer (15, MPIX_INT1, ierr)
+! Debug output
+      IF (myid .EQ. 0) THEN
+         WRITE (6, *) 'LODCSLmpi: About to broadcast arrays'
+         WRITE (6, *) 'LODCSLmpi: NCF =', NCF, 'NNNW =', NNNW
+         WRITE (6, *) 'LODCSLmpi: IQA size =', NNNW*NCF
+         WRITE (6, *) 'LODCSLmpi: JQSA size =', 3*NNNW*NCF
+         WRITE (6, *) 'LODCSLmpi: JCUPA size =', NNNW*NCF
+      ENDIF
 
-      CALL MPI_Bcast                                                   &
-               (IQA(:,:),     NNNW*NCF,MPIX_INT1,0,MPI_COMM_WORLD,ierr)
-!cjb mpix_bytes
-!cjb           (IQA(:,:),    NNNW*NCF,MPI_INTEGER1,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast                                                   &
-               (JQSA(:,:,:),3*NNNW*NCF,MPIX_INT1,0,MPI_COMM_WORLD,ierr)
-!cjb mpix_bytes
-!cjb           (JQSA(:,:,:),3*NNNW*NCF,MPI_INTEGER1,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast                                                   &
-               (JCUPA(:,:),   NNNW*NCF,MPIX_INT1,0,MPI_COMM_WORLD,ierr)
-!cjb mpix_bytes
-!cjb           (JCUPA(:,:),   NNNW*NCF,MPI_INTEGER1,0,MPI_COMM_WORLD,ierr)
+! Use MPI_INTEGER1 instead of MPIX_INT1 to avoid potential issues
+      CALL MPI_Bcast (IQA(:,:), NNNW*NCF, MPI_INTEGER1, 0, MPI_COMM_WORLD, ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE (6, *) 'Error in MPI_Bcast for IQA, ierr =', ierr
+         CALL MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
+      ENDIF
+      
+      CALL MPI_Bcast (JQSA(:,:,:), 3*NNNW*NCF, MPI_INTEGER1, 0, MPI_COMM_WORLD, ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE (6, *) 'Error in MPI_Bcast for JQSA, ierr =', ierr
+         CALL MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
+      ENDIF
+      
+      CALL MPI_Bcast (JCUPA(:,:), NNNW*NCF, MPI_INTEGER1, 0, MPI_COMM_WORLD, ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE (6, *) 'Error in MPI_Bcast for JCUPA, ierr =', ierr
+         CALL MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
+      ENDIF
+      
+      IF (myid .EQ. 0) WRITE (6, *) 'LODCSLmpi: Broadcast completed successfully'
       RETURN
       END SUBROUTINE lodcslmpi
