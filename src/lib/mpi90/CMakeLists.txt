@@ -24,6 +24,10 @@ add_library(mpi90 STATIC
     sys_mkdir.f90
     sys_mkdir_I.f90
 )
+
+# Force lib9290 to be built before mpi90
+add_dependencies(mpi90 lib9290)
+
 setup_fortran_modules(mpi90)
 
 # Explicitly add the include directory for lib9290 modules
