@@ -39,32 +39,25 @@
       IF (K == 0) K = LEN_TRIM(NAME) + 1
       FILNAM = NAME(1:K-1)//'.c'
 
-      ! Debug output
-      WRITE (6, *) 'DEBUG: Process calling SETCSLL is looking for file: "', TRIM(FILNAM), '"'
-      
       INQUIRE(FILE=FILNAM, EXIST=FOUND)
       IF (.NOT.FOUND) THEN
          WRITE (6, *) FILNAM(1:LEN_TRIM(FILNAM)), ' does not exist'
          STOP
       ENDIF
-      
-      WRITE (6, *) 'DEBUG: File exists, attempting to open...'
 
-! Open it
+! Open it - try direct Fortran OPEN instead of OPENFL
 
-      CALL OPENFL (NUNIT, FILNAM, 'FORMATTED', 'OLD', IERR)
-      WRITE (6, *) 'DEBUG: OPENFL returned IERR =', IERR
-      IF (IERR == 1) THEN
+      OPEN(UNIT=NUNIT, FILE=FILNAM, STATUS='OLD', FORM='FORMATTED', &
+           IOSTAT=IERR, ACTION='READ')
+      IF (IERR /= 0) THEN
          WRITE (6, *) 'Error when opening ', FILNAM(1:LEN_TRIM(FILNAM))
+         WRITE (6, *) 'IOSTAT =', IERR
          STOP
       ENDIF
 
 ! Check the first record of the file; if not as expected, stop
 
-      WRITE (6, *) 'DEBUG: About to read first line from unit', NUNIT
       READ (NUNIT, '(1A15)', IOSTAT=IOS) STR
-      WRITE (6, *) 'DEBUG: After read - IOS =', IOS
-      WRITE (6, *) 'DEBUG: STR = "', STR, '"'
       IF (IOS/=0 .OR. STR/='Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'
          ! Don't close the file here - let the calling function handle it

@@ -46,20 +46,16 @@
 !
 
 !     node-0 does exactly the same as the serial code does
-      WRITE (6, *) 'DEBUG CSLHMPI: Process myid =', myid
       IF (myid .EQ. 0) THEN
-        WRITE (6, *) 'DEBUG CSLHMPI: Process 0 calling SETCSLL'
         CALL ALLOC   (ncfblk, nblkin+1, 'ncfblk', 'cslhmpi')
         CALL SETCSLL (21, name, nblkin, nblock, ncfblk, ncftot, &
                        idblk)
         CALL RALLOC  (ncfblk, nblock+1, 'ncfblk', 'cslhmpi')
          REWIND (21)
-      ELSE
-        WRITE (6, *) 'DEBUG CSLHMPI: Process', myid, 'skipping SETCSLL'
-      ENDIF
          READ   (21,*)
          !..Load header of <name> file
          CALL LODCSH (21, NCORE)
+      ENDIF
 
 ! Broadcast results to other nodes. ncfblk should be allocated
 ! on these nodes (with myid .ne. 0)
