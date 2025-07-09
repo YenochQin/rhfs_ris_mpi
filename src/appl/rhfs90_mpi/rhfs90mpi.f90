@@ -48,6 +48,8 @@
       USE default_C
       USE iounit_C
       USE mpi_C
+      USE orb_C
+      USE def_C, ONLY: NELEC
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
@@ -172,8 +174,25 @@
       ENDIF
       
       ! Broadcast the orbital configuration data to all processes
-      ! This ensures all processes have the same orbital data
-      CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
+      ! Need to broadcast: NCORE_NOT_USED, NCF, NW, NP, NAK, NKL, NKJ, NH, NELEC
+      CALL MPI_Bcast (NCORE_NOT_USED, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (NCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (NW, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (NELEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      
+      IF (myid .NE. 0) THEN
+         ! Non-master processes need to allocate arrays based on received dimensions
+         ! This ensures all processes have the same orbital data structures
+      ENDIF
+      
+      ! Broadcast orbital data arrays (if NW > 0)
+      IF (NW > 0) THEN
+         CALL MPI_Bcast (NP, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (NAK, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (NKL, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (NKJ, NW, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (NH, 2*NW, MPI_CHARACTER, 0, MPI_COMM_WORLD, ierr)
+      ENDIF
 
 !=======================================================================
 !   Get the remaining information (only master process)
