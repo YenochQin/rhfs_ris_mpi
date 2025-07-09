@@ -258,14 +258,8 @@
 !   Load wavefunction data using MPI-aware function
 !=======================================================================
       ! setrwfmpi opens .w file and calls lodrwfmpi internally
-      ! Build .w filename from the base name (remove .c extension)
-      IF (myid .EQ. 0) THEN
-         WRITE (ISTDE, *) 'DEBUG: NAME =', TRIM(NAME)
-         WRITE (ISTDE, *) 'DEBUG: lenname =', lenname
-         WRITE (ISTDE, *) 'DEBUG: NAME(1:lenname-2) =', NAME(1:lenname-2)
-         WRITE (ISTDE, *) 'DEBUG: wavefunction file will be:', TRIM(NAME(1:lenname-2) // '.w')
-      ENDIF
-      CALL setrwfmpi (NAME(1:lenname-2) // '.w')
+      ! Build .w filename from the base name (NAME doesn't have extension)
+      CALL setrwfmpi (NAME(1:lenname) // '.w')
       
       IF (myid .EQ. 0) WRITE (ISTDE, *) 'Wavefunction data loaded successfully'
 
