@@ -33,23 +33,16 @@
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
       INTEGER :: J, I, K, NWIN, IOS, NPY, NAKY, MY
+!     integer :: ierr
       REAL(DOUBLE) :: CON, FKK, EY, PZY, DNORM
       real(double), dimension(:), pointer :: PA, QA, RA
-      REAL(DOUBLE) :: Z, EMN, PARM(2)
-      INTEGER NPARM
-      INTEGER ierr
-      EXTERNAL mpi_bcast_dp_s, mpi_bcast_dp_a, mpi_bcast_int_s
 !-----------------------------------------------
-      IF (myid .EQ. 0) THEN
-         OPEN (UNIT=22, FILE='isodata', STATUS='OLD')
-         CALL SETISO (isofile)
-         CLOSE (22)
-      ENDIF
+      IF (myid .EQ. 0) CALL SETISO (isofile)
 
-      CALL mpi_bcast_dp_s (Z, 0)
-      CALL mpi_bcast_dp_s (EMN, 0)
-      CALL mpi_bcast_dp_a (PARM, 2, 0)
-      CALL mpi_bcast_int_s (NPARM, 0)
+      CALL MPI_Bcast (Z,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (EMN,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (PARM,2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NPARM,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (SQN,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (DMOMNM,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD, &
         ierr)

@@ -1,9 +1,10 @@
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE HFSGG
+      SUBROUTINE HFSGGMPI
 !                                                                      *
 !   This routine controls the main sequence of routine calls for the   *
-!   calculation  of the  hyperfine structure parameters.               *
+!   calculation  of the  hyperfine structure parameters. This is the   *
+!   MPI version.                                                       *
 !                                                                      *
 !   Call(s) to: [LIB92]: ALLOC, CONVRT, DALLOC, DRACAH, ISPAR, ITJPO,  *
 !                        TNSRJJ.                                       *
@@ -16,6 +17,7 @@
 !                                         Last revision: 22 Oct 1999   *
 !   Modified by Gediminas Gaigalas for new spin-angular integration.   *
 !                                         Last revision:    Nov 2017   *
+!   MPI version by Gemini AI              Last revision:    Jul 2025   *
 !                                                                      *
 !***********************************************************************
 !...Translated by Pacific-Sierra Research 77to90  4.3E  18:35:13   1/ 6/07
@@ -39,12 +41,13 @@
       USE prnt_C
       USE OPT6_C
       USE syma_C
+      USE mpi_C
 !-----------------------------------------------
 !   I n t e r f a c e   B l o c k s
 !-----------------------------------------------
       USE rinthf_I
       USE rint_I
-      USE matelt_I
+      USE mateltmpi_I
       USE convrt_I
       USE ispar_I
       USE itjpo_I
@@ -105,7 +108,7 @@
                   RINTME(KT,I,J) = RINT(I,J,-3)
                   RINTDGJ(I,J) = RINT(I,J,0)
                ENDIF
-               CALL MATELT (I, KT, J, APART, GJPART, DGJPART)
+               CALL MATELTMPI (I, KT, J, APART, GJPART, DGJPART)
                AMELT(KT,I,J) = APART
                IF (KT /= 1) CYCLE
                GJMELT(I,J) = GJPART
@@ -121,13 +124,13 @@
 !   Sweep through the Hamiltonian matrix to determine the
 !   diagonal and off-diagonal hyperfine constants
 !
-      DO IC = 1, NCF
+      DO IC = myid+1, NCF, nprocs
 !
 !   Output IC on the screen to show how far the calculation has preceede
 !
-         IF (MOD(IC,100) == 0) THEN
+         IF (MOD(IC,100) == 0 .AND. myid .EQ. 0) THEN
             CALL CONVRT (IC, CNUM, LCNUM)
-            WRITE (6, *) 'Column '//CNUM(1:LCNUM)//' complete;'
+            WRITE (6, *) 'Process 0: Column '//CNUM(1:LCNUM)//' complete;'
          ENDIF
 !
          DO IR = 1, NCF
@@ -256,6 +259,12 @@
          END DO
       END DO
 !
+!  Sum contributions from all processes
+!
+      CALL gdsummpi (HFC, 5*NVEC*NVEC)
+      CALL gdsummpi (GJC, NVEC*NVEC)
+      CALL gdsummpi (DGJC, NVEC*NVEC)
+!
 !   These are the conversion factors to obtain the hyperfine
 !   constants in MHz
 !
@@ -268,8 +277,10 @@
 !
 !   Output the hyperfine interaction constants
 !
-      WRITE (24, 302)
-      WRITE (29, 402)
+      IF (myid .EQ. 0) THEN
+          WRITE (24, 302)
+          WRITE (29, 402)
+      ENDIF
 !
       DO I = 1, NVEC
          DO II = 1, NVEC
@@ -313,7 +324,7 @@
 !                GJ = CVAC*GJA1*GJC(NVEC*(I-1)+II)
 !                DGJ = 0.001160D0*GJA1*DGJC(NVEC*(I-1)+II)
 
-                  WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), &
+                  IF (myid .EQ. 0) WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), &
                      IVEC(II), LABJ(JJII), LABP((IASPAR(II)+3)/2), AFA1*HFC(1,&
                      NVEC*(I-1)+II), BFA1*HFC(3,NVEC*(I-1)+II)
 !
@@ -322,7 +333,7 @@
                   IF (I == II) THEN
                      GJ = CVAC*GJA1*GJC(NVEC*(I-1)+II)
                      DGJ = 0.001160D0*GJA1*DGJC(NVEC*(I-1)+II)
-                     WRITE (29, 403) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), &
+                     IF (myid .EQ. 0) WRITE (29, 403) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), &
                         AFA1*HFC(1,NVEC*(I-1)+II), BFA1*HFC(3,NVEC*(I-1)+II), &
                         GJ, DGJ, GJ + DGJ
                   ENDIF
@@ -331,14 +342,14 @@
 !   Off diagonal (J,J-1) A and B factors
 !
             CASE (2)
-               WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), IVEC(&
+               IF (myid .EQ. 0) WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), IVEC(&
                   II), LABJ(JJII), LABP((IASPAR(II)+3)/2), AFA2*HFC(2,NVEC*(I-1&
                   )+II), BFA2*HFC(4,NVEC*(I-1)+II)
 !
 !   Off diagonal (J,J-2) B factor
 !
             CASE (4)
-               WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), IVEC(&
+               IF (myid .EQ. 0) WRITE (24, 303) IVEC(I), LABJ(JJ), LABP((IASPAR(I)+3)/2), IVEC(&
                   II), LABJ(JJII), LABP((IASPAR(II)+3)/2), 0.0D00, BFA3*HFC(5,&
                   NVEC*(I-1)+II)
             END SELECT
@@ -404,9 +415,9 @@
                   HFSELT1 = FACTOR2*RAC1*HFC(1,NVEC*(JB-1)+JA)*TILDE1
                   HFSELT2 = FACTOR2*RAC2*HFC(3,NVEC*(JB-1)+JA)*TILDE2
                   IF (ABS(HFSELT1 + HFSELT2) > CUTOFF*10.0D-05) THEN
-                     IF (IFLAG == 0) WRITE (24, 304)
+                     IF (IFLAG == 0 .AND. myid .EQ. 0) WRITE (24, 304)
                      IFLAG = 1
-                     WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
+                     IF (myid .EQ. 0) WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
                         /2), IVEC(JA), LABJ(JJA+1), LABP((IASPAR(JA)+3)/2), &
                         LABJ(FF+1), HFSELT1 + HFSELT2
                   ENDIF
@@ -417,9 +428,9 @@
                   HFSELT1 = FACTOR2*RAC1*HFC(2,NVEC*(JB-1)+JA)*TILDE1
                   HFSELT2 = FACTOR2*RAC2*HFC(4,NVEC*(JB-1)+JA)*TILDE2
                   IF (ABS(HFSELT1 + HFSELT2) > CUTOFF*10.0D-05) THEN
-                     IF (IFLAG == 0) WRITE (24, 304)
+                     IF (IFLAG == 0 .AND. myid .EQ. 0) WRITE (24, 304)
                      IFLAG = 1
-                     WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
+                     IF (myid .EQ. 0) WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
                         /2), IVEC(JA), LABJ(JJA+1), LABP((IASPAR(JA)+3)/2), &
                         LABJ(FF+1), HFSELT1 + HFSELT2
                   ENDIF
@@ -430,9 +441,9 @@
                   HFSELT1 = 0.0D00
                   HFSELT2 = FACTOR2*RAC2*HFC(5,NVEC*(JB-1)+JA)*TILDE2
                   IF (ABS(HFSELT1 + HFSELT2) > CUTOFF*10.0D-05) THEN
-                     IF (IFLAG == 0) WRITE (24, 304)
+                     IF (IFLAG == 0 .AND. myid .EQ. 0) WRITE (24, 304)
                      IFLAG = 1
-                     WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
+                     IF (myid .EQ. 0) WRITE (24, 305) IVEC(JB), LABJ(JJB+1), LABP((IASPAR(JB)+3)&
                         /2), IVEC(JA), LABJ(JJA+1), LABP((IASPAR(JA)+3)/2), &
                         LABJ(FF+1), HFSELT1 + HFSELT2
                   ENDIF
@@ -459,4 +470,4 @@
   305 FORMAT(1X,1I3,5X,2A4,2X,1I3,5X,2A4,1X,A4,4X,1P,1D20.10)
       RETURN
 !
-      END SUBROUTINE HFSGG
+      END SUBROUTINE HFSGGMPI

@@ -49,7 +49,6 @@
 !     integer :: ierr
       REAL(DOUBLE) :: CON, FKK, EY, PZY, DNORM
       real(double), dimension(:), pointer :: PA, QA, RA
-      EXTERNAL mpi_bcast_int_s, mpi_bcast_dp_s, mpi_bcast_dp_a
 !-----------------------------------------------
 !
 !-----------------------------------------------------------------------
@@ -98,57 +97,47 @@
       NWIN = 0
     3 CONTINUE
 
-      IF (myid .EQ. 0) THEN
-         OPEN (UNIT=22, FILE='isodata', STATUS='OLD')
-         READ (22) NPY,NAKY,EY,MY
-         CLOSE (22)
-      ENDIF
+      IF (myid .EQ. 0) READ (23,IOSTAT = IOS) NPY,NAKY,EY,MY
+      CALL MPI_Bcast (IOS,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NPY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAKY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (MY,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (EY,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
 
-      CALL mpi_bcast_int_s (NPY, 0)
-      CALL mpi_bcast_int_s (NAKY, 0)
-      CALL mpi_bcast_dp_s (EY, 0)
-      CALL mpi_bcast_int_s (MY, 0)
+      IF (IOS .EQ. 0) THEN
+         CALL ALLOC (PA,MY, 'PA', 'LODRWFMPI')
+         CALL ALLOC (QA,MY, 'QA', 'LODRWFMPI')
+         CALL ALLOC (RA,MY, 'RA', 'LODRWFMPI')
 
-      IF (myid .NE. 0) THEN
-         CALL ALLOC (PA, MY, 'PA', 'lodrwfmpi')
-         CALL ALLOC (QA, MY, 'QA', 'lodrwfmpi')
-         CALL ALLOC (RA, MY, 'RA', 'lodrwfmpi')
-      ENDIF
+         IF (myid .EQ. 0) THEN
+            READ (23) PZY,(PA(I),I = 1,MY),(QA(I),I =1 ,MY)
+            READ (23) (RA(I),I = 1,MY)
+         ENDIF
 
-      IF (myid .EQ. 0) THEN
-         CALL dcopy (MY, P(NPY), 1, PA, 1)
-         CALL dcopy (MY, Q(NPY), 1, QA, 1)
-         CALL dcopy (MY, R(NPY), 1, RA, 1)
-         PZY = PZ(NPY)
-      ENDIF
+         CALL MPI_Bcast (PZY,1,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (PA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (QA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
+         CALL MPI_Bcast (RA,MY,MPI_DOUBLE_PRECISION,0, &
+                               MPI_COMM_WORLD,ierr)
 
-      CALL mpi_bcast_dp_s (PZY, 0)
-      CALL mpi_bcast_dp_a (PA, MY, 0)
-      CALL mpi_bcast_dp_a (QA, MY, 0)
-      CALL mpi_bcast_dp_a (RA, MY, 0)
+         DO J = 1, NW
+            IF (.NOT.(E(J)<0.0D00 .AND. NPY==NP(J) .AND. NAKY==NAK(J))) CYCLE
+               PZ(J) = PZY
+               E(J) = EY
+               CALL INTRPQ (PA, QA, MY, RA, J, DNORM)
+               IF (LDBPR(3) .AND. myid .EQ. 0) &
+                     WRITE (99,301) NP(J), NH(J), E(J), DNORM
+               NWIN = NWIN + 1
+         ENDDO
 
-      IF (myid .NE. 0) THEN
-         CALL dcopy (MY, PA, 1, P(NPY), 1)
-         CALL dcopy (MY, QA, 1, Q(NPY), 1)
-         CALL dcopy (MY, RA, 1, R(NPY), 1)
-         PZ(NPY) = PZY
-      ENDIF
+         CALL DALLOC (PA, 'PA', 'LODRWFMPI')
+         CALL DALLOC (QA, 'QA', 'LODRWFMPI')
+         CALL DALLOC (RA, 'RA', 'LODRWFMPI')
 
-      DO J = 1, NW
-         IF (.NOT.(E(J)<0.0D00 .AND. NPY==NP(J) .AND. NAKY==NAK(J))) CYCLE
-            PZ(J) = PZY
-            E(J) = EY
-            CALL INTRPQ (PA, QA, MY, RA, J, DNORM)
-            IF (LDBPR(3) .AND. myid .EQ. 0) &
-                  WRITE (99,301) NP(J), NH(J), E(J), DNORM
-            NWIN = NWIN + 1
-      ENDDO
-
-      CALL DALLOC (PA, 'PA', 'LODRWFMPI')
-      CALL DALLOC (QA, 'QA', 'LODRWFMPI')
-      CALL DALLOC (RA, 'RA', 'LODRWFMPI')
-
-      GOTO 3
+         GOTO 3
       ENDIF
       IF (LDBPR(3) .AND. myid .EQ. 0) &
             WRITE (99,*) ' orbitals renormalised;'

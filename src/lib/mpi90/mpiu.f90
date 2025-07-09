@@ -247,21 +247,24 @@
       CHARACTER(LEN=*), INTENT(OUT) :: msg
 
 !-----------------------------------------------
-!   L o c a l   V a r i a b l e s
+!   L o c a l  V a r i a b l e s
 !-----------------------------------------------
       INTEGER :: inID, istat(MPI_STATUS_SIZE), ierr, msgLength
-      EXTERNAL mpi_send_int, mpi_send_char, mpi_recv_int, mpi_recv_char
 
       msgLength = len_trim (msg)
 
       if (myid .ne. 0) then
-         call mpi_send_int (msgLength, 0, myid)
-         call mpi_send_char (msg, msgLength, 0, myid+nprocs)
+         call MPI_Send (msgLength, 1, MPI_INTEGER, 0, myid, &
+                        MPI_COMM_WORLD, ierr)   ! Send nsgLength
+         call MPI_Send (msg, msgLength, MPI_CHARACTER, 0, myid+nprocs, &
+                        MPI_COMM_WORLD, ierr)   ! Send msg
       else
-         print *, msg(1:msgLength)
+         print *, msg(1:msgLength)      ! msg from node 0 itself
          do inID = 1, nprocs - 1
-            call mpi_recv_int (msgLength, inID, inID, istat)
-            call mpi_recv_char (msg, msgLength, inID, inID+nprocs, istat)
+            call MPI_Recv (msgLength, 1, MPI_INTEGER, inID, &
+                           inID, MPI_COMM_WORLD, istat, ierr)
+            call MPI_Recv (msg, msgLength, MPI_CHARACTER, inID, &
+                           inID+nprocs, MPI_COMM_WORLD, istat, ierr)
             print *, msg(1:msgLength)
          enddo
       endif
@@ -345,4 +348,24 @@
       RETURN
       END
 
+!***********************************************************************
+      SUBROUTINE gisummpi (ix, n)
+!     Sum x over all nodes and in iy, then copy iy to  ix
+!***********************************************************************
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
 
+      INTEGER, INTENT(IN)                         :: n
+      INTEGER, DIMENSION(1:n), INTENT(INOUT) ::  ix
+
+      INTEGER                                     :: ierr, i
+      INTEGER, DIMENSION(1:n)                ::  iy
+
+      iy = 0
+
+      CALL MPI_Allreduce (ix, iy, n, MPI_INTEGER, MPI_SUM, &
+                                     MPI_COMM_WORLD, ierr)
+      CALL icopy (n, iy, 1, ix, 1)
+
+      RETURN
+      END
