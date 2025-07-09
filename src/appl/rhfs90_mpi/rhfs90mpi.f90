@@ -85,7 +85,7 @@
       INTEGER   :: K, NCI, NCORE_NOT_USED, LENNAME
       INTEGER   :: NCOUNT1
       LOGICAL   :: YES
-      CHARACTER :: NAME*24, NAMESAVE*24
+      CHARACTER :: NAME*128, NAMESAVE*24
       CHARACTER(LEN=8), DIMENSION(50) :: IDBLK
       CHARACTER(LEN=128) :: STARTDIR, TMPDIR, PERMDIR
       CHARACTER(LEN=80)  :: MSG
@@ -138,7 +138,11 @@
             GO TO 10
          ENDIF
          NAMESAVE = NAME
+         
+         ! Form the full name of the files used on node-0 (like RCI90)
          lenname = LEN_TRIM (NAME)
+         NAME = TRIM(PERMDIR) // '/' // NAME(1:lenname)
+         lenname = LEN_TRIM(NAME)
          
          WRITE (ISTDE, *)
          WRITE (ISTDE, *) 'Mixing coefficients from a CI calc.?'
@@ -151,7 +155,7 @@
       ENDIF
       
       CALL MPI_Bcast (lenname,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
-      CALL MPI_Bcast (NAME,24,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
+      CALL MPI_Bcast (NAME,128,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (NCI,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 
 !=======================================================================
@@ -184,13 +188,9 @@
 !   Load configuration data using cslhmpi which handles MPI broadcasting
 !   This function properly allocates arrays on all processes before broadcasting
 !=======================================================================
-      ! cslhmpi expects the base name and adds .c internally
-      ! Build the filename with .c extension following RCI90 pattern
-      IF (lenname >= 2 .AND. NAME(lenname-1:lenname) == '.c') THEN
-         CALL cslhmpi (NAME(1:lenname-2) // '.c', NCORE_NOT_USED, 50, IDBLK)
-      ELSE
-         CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
-      ENDIF
+      ! cslhmpi expects the complete filename including .c extension
+      ! Follow RCI90 pattern exactly
+      CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
       
       ! Print summary information on master process
       IF (myid .EQ. 0) THEN

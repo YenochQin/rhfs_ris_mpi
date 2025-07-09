@@ -36,18 +36,10 @@
       CHARACTER (LEN = 6) :: G92RWF
 !-----------------------------------------------
       IF (myid .EQ. 0) THEN
-         ! Try multiple possible paths following RCI90 pattern
          CALL openfl (23, name, 'UNFORMATTED', 'OLD', ierror)
          IF (ierror .EQ. 1) THEN
-            CALL openfl (23, '../' // name, 'UNFORMATTED', 'OLD', ierror)
-            IF (ierror .EQ. 1) THEN
-               CALL openfl (23, '../../' // name, 'UNFORMATTED', 'OLD', ierror)
-               IF (ierror .EQ. 1) THEN
-                  WRITE (istde,*) 'Error opening', name(1:LEN_TRIM (name))
-                  WRITE (istde,*) 'Tried current dir, ../ and ../../'
-                  STOP
-               ENDIF
-            ENDIF
+            WRITE (istde,*) 'Error opening', name(1:LEN_TRIM (name))
+            STOP
          ENDIF
 
 !   Check the file; if not as expected, stop.
