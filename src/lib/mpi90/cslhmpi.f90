@@ -88,15 +88,23 @@
       CALL MPI_Bcast (nkj,  nw, MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       CALL MPI_Bcast (nh, 2*nw, MPI_CHARACTER,0,MPI_COMM_WORLD,ierr)
 
-!     Simple solution: allocate JCUPA on all processes and broadcast
+!     Broadcast JCUPA array following RCI90 pattern
+      CALL MPI_Bcast (NCFTOT, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Allocate JCUPA on non-master processes
       IF (myid /= 0) THEN
          CALL ALLOC (JCUPA, NNNW, NCFTOT, 'JCUPA', 'CSLHMPI')
          JCUPA = 0  ! Initialize with zeros
       ENDIF
       
-      ! Only broadcast if process 0 has JCUPA allocated
+      ! Check if JCUPA is allocated on master process before broadcasting
       IF (myid .EQ. 0 .AND. ASSOCIATED(JCUPA)) THEN
-         CALL MPI_Bcast (JCUPA, NNNW*NCFTOT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr)
+         CALL MPI_Bcast (JCUPA, NNNW*NCFTOT, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      ELSE
+         ! If not allocated on master, broadcast zeros
+         IF (myid .EQ. 0) THEN
+            WRITE (6, *) 'Warning: JCUPA not allocated on master process'
+         ENDIF
       ENDIF
 
       RETURN

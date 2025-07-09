@@ -184,12 +184,12 @@
 !   Load configuration data using cslhmpi which handles MPI broadcasting
 !   This function properly allocates arrays on all processes before broadcasting
 !=======================================================================
-      ! cslhmpi expects the base name without extension (it adds .c internally)
-      ! Remove .c extension if present
+      ! cslhmpi expects the base name and adds .c internally
+      ! Build the filename with .c extension following RCI90 pattern
       IF (lenname >= 2 .AND. NAME(lenname-1:lenname) == '.c') THEN
-         CALL cslhmpi (NAME(1:lenname-2), NCORE_NOT_USED, 50, IDBLK)
+         CALL cslhmpi (NAME(1:lenname-2) // '.c', NCORE_NOT_USED, 50, IDBLK)
       ELSE
-         CALL cslhmpi (NAME(1:lenname), NCORE_NOT_USED, 50, IDBLK)
+         CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
       ENDIF
       
       ! Print summary information on master process
@@ -223,7 +223,9 @@
       
       ! Broadcast nuclear parameter data
       CALL MPI_Bcast (NPARM, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      CALL MPI_Bcast (PARM(1), 2, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      IF (NPARM > 0) THEN
+         CALL MPI_Bcast (PARM(1), NPARM, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      ENDIF
       
       ! Broadcast wave factor data
       CALL MPI_Bcast (WFACT, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
@@ -269,8 +271,15 @@
       CALL MPI_Bcast (NVEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
       IF (myid .EQ. 0) WRITE (6, *) 'DEBUG: NVEC = ', NVEC
       
+      ! Check for valid NVEC across all processes
+      IF (NVEC <= 0) THEN
+         IF (myid .EQ. 0) WRITE (ISTDE, *) 'Error: Invalid NVEC = ', NVEC
+         CALL MPI_FINALIZE(ierr)
+         STOP
+      ENDIF
+      
       ! Allocate arrays on non-master processes
-      IF (myid .NE. 0 .AND. NVEC > 0) THEN
+      IF (myid .NE. 0) THEN
          CALL ALLOC (EVAL, NVEC, 'EVAL', 'RHFS90MPI')
          CALL ALLOC (EVEC, NCF*NVEC, 'EVEC', 'RHFS90MPI')
          CALL ALLOC (IVEC, NVEC, 'IVEC', 'RHFS90MPI')
@@ -278,14 +287,27 @@
          CALL ALLOC (IASPAR, NVEC, 'IASPAR', 'RHFS90MPI')
       ENDIF
       
-      ! Broadcast the arrays
-      IF (NVEC > 0) THEN
-         CALL MPI_Bcast (EVAL(1), NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (EVEC(1), NCF*NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (IVEC(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (IATJPO(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-         CALL MPI_Bcast (IASPAR(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      ! Broadcast the arrays with proper error checking
+      CALL MPI_Bcast (EVAL(1), NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE (ISTDE, *) 'MPI_Bcast failed for EVAL, ierr =', ierr
+         CALL MPI_FINALIZE(ierr)
+         STOP
       ENDIF
+      
+      CALL MPI_Bcast (EVEC(1), NCF*NVEC, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE (ISTDE, *) 'MPI_Bcast failed for EVEC, ierr =', ierr
+         CALL MPI_FINALIZE(ierr)
+         STOP
+      ENDIF
+      
+      CALL MPI_Bcast (IVEC(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (IATJPO(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      CALL MPI_Bcast (IASPAR(1), NVEC, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      
+      ! Synchronize all processes after data distribution
+      CALL MPI_Barrier (MPI_COMM_WORLD, ierr)
 
 !=======================================================================
 !   Append a summary of the inputs to the  .sum  file

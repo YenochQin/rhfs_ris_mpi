@@ -348,9 +348,22 @@
                         
       CALL MPI_ALLREDUCE(DGJC_LOCAL, DGJC, NVEC*NVEC, MPI_DOUBLE_PRECISION, &
                         MPI_SUM, MPI_COMM_WORLD, ierr)
-
-      ! Synchronize all processes before output
-      CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+      
+      ! Check for MPI errors following RCI90 pattern
+      IF (ierr .NE. 0) THEN
+         WRITE (6, *) 'MPI_ALLREDUCE failed in HFSGGMPI, ierr =', ierr
+         CALL MPI_FINALIZE(ierr)
+         STOP
+      ENDIF
+      
+      ! Synchronize all processes after communication
+      CALL MPI_Barrier (MPI_COMM_WORLD, ierr)
+      
+      ! Debug output on master process
+      IF (myid .EQ. 0) THEN
+         WRITE (6, *) 'HFSGGMPI: Parallel computation completed successfully'
+         WRITE (6, *) 'HFSGGMPI: Results collected from all', nprocs, 'processes'
+      ENDIF
 
       IF (myid == 0) THEN
          WRITE (6, *) 'Parallel calculation completed. Processing results...'
