@@ -275,7 +275,6 @@
 !=======================================================================
       ! Broadcast basic dimensions first
       CALL MPI_Bcast (NVEC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      IF (myid .EQ. 0) WRITE (6, *) 'DEBUG: NVEC = ', NVEC
       
       ! Check for valid NVEC across all processes
       IF (NVEC <= 0) THEN
