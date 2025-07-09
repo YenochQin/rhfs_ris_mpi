@@ -49,3 +49,4 @@ add_subdirectory("src/lib/libmcp90")
 add_subdirectory("src/lib/librang90")
 
 add_subdirectory("src/appl/rhfs90_mpi")
+add_subdirectory("src/appl/ris4_mpi")
