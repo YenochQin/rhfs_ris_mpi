@@ -45,6 +45,13 @@
       KA = ABS(KAPPAA)
       KB = ABS(KAPPAB)
 !
+!   Check for invalid kappa values that would cause LOG(0)
+!
+      IF (KA == 0 .OR. KB == 0) THEN
+         CLRX = 0.0D00
+         RETURN
+      ENDIF
+!
 !   Perform the triangularity check
 !
       IF (ABS(KA - KB)<=K .AND. KA+KB-1>=K) THEN

@@ -377,6 +377,12 @@
 
                FJ = 0.5D00*DBLE(JJ - 1)
 
+               ! Check for division by zero when JJ=1 (FJ=0)
+               IF (FJ <= 0.0D00) THEN
+                  ! Skip this calculation for J=1/2 states
+                  CYCLE
+               ENDIF
+
                GJA1 = SQRT(1.0D00/(FJ*(FJ + 1.0D00)))
 
                AFA1 = GFAC*GJA1
@@ -384,21 +390,46 @@
                IF (JJ == 2) THEN
                   AFA2 = 0.D000
                ELSE
-                  AFA2 = GFAC*SQRT(1.0D00/(FJ*(2.0D00*FJ - 1.0D00)))
+                  ! Check for division by zero when 2*FJ-1 = 0 (JJ=2)
+                  IF (ABS(2.0D00*FJ - 1.0D00) <= 1.0D-12) THEN
+                     AFA2 = 0.D000
+                  ELSE
+                     AFA2 = GFAC*SQRT(1.0D00/(FJ*(2.0D00*FJ - 1.0D00)))
+                  ENDIF
                ENDIF
-               BFA1 = HFAC*SQRT((FJ*(2.0D00*FJ - 1.0D00))/((FJ + 1.0D00)*(2.0D00*&
-                  FJ + 3.0D00)))
+               
+               ! Check for division by zero in BFA1 calculation
+               IF (ABS(2.0D00*FJ - 1.0D00) <= 1.0D-12 .OR. ABS(FJ + 1.0D00) <= 1.0D-12 .OR. &
+                   ABS(2.0D00*FJ + 3.0D00) <= 1.0D-12 .OR. FJ <= 0.0D00) THEN
+                  BFA1 = 0.0D00
+               ELSE
+                  BFA1 = HFAC*SQRT((FJ*(2.0D00*FJ - 1.0D00))/((FJ + 1.0D00)*(2.0D00*&
+                     FJ + 3.0D00)))
+               ENDIF
+               
                IF (JJ == 2) THEN
                   BFA2 = 0.0D00
                ELSE
-                  BFA2 = 0.25D00*HFAC*SQRT((FJ*(FJ - 1.0D00))/((FJ + 1.0D00)*(&
-                     2.0D00*FJ - 1.0D00)))
+                  ! Check for division by zero in BFA2 calculation
+                  IF (FJ <= 1.0D00 .OR. ABS(FJ + 1.0D00) <= 1.0D-12 .OR. &
+                      ABS(2.0D00*FJ - 1.0D00) <= 1.0D-12) THEN
+                     BFA2 = 0.0D00
+                  ELSE
+                     BFA2 = 0.25D00*HFAC*SQRT((FJ*(FJ - 1.0D00))/((FJ + 1.0D00)*(&
+                        2.0D00*FJ - 1.0D00)))
+                  ENDIF
                ENDIF
                IF (JJ == 4) THEN
                   BFA3 = 0.0D00
                ELSE
-                  BFA3 = 0.125D00*HFAC*SQRT((FJ*(FJ - 1.0D000)*(2.0D00*FJ - 1.0D00&
-                     ))/(2.0D00*FJ - 3.0D00))
+                  ! Check for division by zero in BFA3 calculation
+                  IF (FJ <= 1.0D00 .OR. ABS(2.0D00*FJ - 1.0D00) <= 1.0D-12 .OR. &
+                      ABS(2.0D00*FJ - 3.0D00) <= 1.0D-12) THEN
+                     BFA3 = 0.0D00
+                  ELSE
+                     BFA3 = 0.125D00*HFAC*SQRT((FJ*(FJ - 1.0D000)*(2.0D00*FJ - 1.0D00&
+                        ))/(2.0D00*FJ - 3.0D00))
+                  ENDIF
                ENDIF
 
 !

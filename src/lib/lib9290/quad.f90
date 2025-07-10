@@ -53,10 +53,14 @@
       DO I = 2, MTPM1
 !
          TAI = TA(I)
-         IF (ABS(TAI) <= 0.D0) CYCLE
+         ! More robust check for small values
+         IF (ABS(TAI) <= 1.0D-12) CYCLE
 !
          IP1 = I + 1
          TAIP1 = TA(IP1)
+         ! Check for division by zero
+         IF (ABS(TAI) <= 1.0D-12) CYCLE
+         
          QUOTT = TAIP1/TAI
 !
          IF (QUOTT <= 0.D0) CYCLE
@@ -65,9 +69,19 @@
 !
          FRIP1 = TAIP1/RP(IP1)
          FRI = TAI/RP(I)
+         
+         ! Check for division by zero
+         IF (ABS(FRI) <= 1.0D-12) CYCLE
+         
          RATIO = FRIP1/FRI
          RIP1 = R(IP1)
          RI = R(I)
+         
+         ! Check for invalid logarithm arguments
+         IF (RATIO <= 0.D0) CYCLE
+         IF (RIP1 <= 0.D0 .OR. RI <= 0.D0) CYCLE
+         IF (ABS(RIP1/RI - 1.0D0) <= 1.0D-12) CYCLE  ! Avoid log(1) = 0 division
+         
          SIGMA = LOG(RATIO)/LOG(RIP1/RI)
 !
 !   Analytical integration and error estimate for interval r(1:i)
