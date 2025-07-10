@@ -99,8 +99,30 @@
 !  Start mpi --- get processor info: myid, nprocs, host name; and print
 !=======================================================================
 
-      CALL startmpi2 (myid, nprocs, host, lenhost, ncount1,       &
-                           startdir, permdir, tmpdir, 'RHFS_MPI')
+      ! Initialize MPI without complex directory switching for RHFS
+      CALL MPI_INIT(ierr)
+      CALL MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr)
+      CALL MPI_COMM_SIZE(MPI_COMM_WORLD, nprocs, ierr)
+      
+      ! Set simple hostname
+      host = 'localhost'
+      lenhost = 9
+      
+      ! Stay in current working directory - no complex path handling needed
+      startdir = '.'
+      permdir = '.'
+      tmpdir = '.'
+      ncount1 = 0
+      
+      IF (myid .EQ. 0) THEN
+         PRINT *
+         PRINT *, '===================================================='
+         PRINT *, '       RHFS_MPI: Execution Begins ...'
+         PRINT *, '===================================================='
+         PRINT *, 'Participating nodes:'
+         PRINT *, '  Host: '//TRIM(host)//'    ID: ', myid
+         PRINT *
+      ENDIF
       WRITE (idstring, '(I3.3)') myid
 
 !=======================================================================
@@ -143,9 +165,7 @@
          ENDIF
          NAMESAVE = NAME
          lenname = LEN_TRIM (NAME)
-         ! Form full path following rbiotransform90_mpi pattern
-         NAME = TRIM(PERMDIR) // '/' // NAME(1:lenname)
-         lenname = LEN_TRIM(NAME)
+         ! Keep NAME as simple filename - no path modification needed for RHFS
          
          WRITE (ISTDE, *)
          WRITE (ISTDE, *) 'Mixing coefficients from a CI calc.?'
@@ -192,7 +212,7 @@
 !   Following the pattern from rangular90_mpi and rbiotransform90_mpi
 !=======================================================================
       ! Load CSL header information
-      CALL cslhmpi (NAME(1:lenname) // '.c', NCORE_NOT_USED, 50, IDBLK)
+      CALL cslhmpi (TRIM(NAME) // '.c', NCORE_NOT_USED, 50, IDBLK)
       
       ! Print summary information on master process
       IF (myid .EQ. 0) THEN
@@ -258,8 +278,7 @@
 !   Load wavefunction data using MPI-aware function
 !=======================================================================
       ! setrwfmpi opens .w file and calls lodrwfmpi internally
-      ! Build .w filename from the base name (NAME doesn't have extension)
-      CALL setrwfmpi (NAME(1:lenname) // '.w')
+      CALL setrwfmpi (TRIM(NAME) // '.w')
       
       IF (myid .EQ. 0) WRITE (ISTDE, *) 'Wavefunction data loaded successfully'
 
@@ -340,8 +359,14 @@
 !  Execution finished; Statistics output
 !=======================================================================
 
-      CALL stopmpi2 (myid, nprocs, host, lenhost,          &
-                           ncount1, 'RHFS_MPI')
+      ! Simple MPI finalization
+      IF (myid .EQ. 0) THEN
+         PRINT *
+         PRINT *, '===================================================='
+         PRINT *, '       RHFS_MPI: Execution Finished ...'
+         PRINT *, '===================================================='
+      ENDIF
+      CALL MPI_FINALIZE(ierr)
 
 !=======================================================================
 !   Print completion message (only on node 0)

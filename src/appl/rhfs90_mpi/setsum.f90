@@ -34,6 +34,8 @@
 !   File  hfs92.sum  is FORMATTED
 !
       K = INDEX(NAME,' ')
+      IF (K == 0) K = LEN_TRIM(NAME) + 1  ! Handle case where NAME has no spaces
+      
       IF (NCI == 0) THEN
          FILNAM1 = NAME(1:K-1)//'.ch'
          FILNAM2 = NAME(1:K-1)//'.choffd'

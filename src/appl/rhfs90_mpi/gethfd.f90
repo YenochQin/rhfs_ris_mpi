@@ -156,12 +156,8 @@
 !
 !      CALL SETRWFA(NAME)
 
-      ! Fix path for .w file in MPI environment
-      IF (INDEX(PWD, 'mpi_tmp') > 0) THEN
-         CALL SETRWFA ('../../'//TRIM(NAME)//'.w')
-      ELSE
-         CALL SETRWFA (TRIM(NAME)//'.w')
-      ENDIF
+      ! Load radial wavefunction file - simplified for direct file access
+      CALL SETRWFA (TRIM(NAME)//'.w')
 
 !
       RETURN
