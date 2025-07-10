@@ -153,12 +153,12 @@
 !
       
       DO IC = myid + 1, NCF, nprocs
-         ! Reduce debug output frequency to avoid overwhelming output
 !
 !   Output IC on the screen to show how far the calculation has proceeded
-!   (only from process 0 to avoid cluttering output)
+!   Modified logic: Any process that handles a multiple of 100 will output progress
+!   to ensure we get regular progress updates
 !
-         IF (myid == 0 .AND. MOD(IC,100) == 0) THEN
+         IF (MOD(IC,100) == 0) THEN
             CALL CONVRT (IC, CNUM, LCNUM)
             WRITE (6, *) 'Column '//CNUM(1:LCNUM)//' complete;'
          ENDIF
