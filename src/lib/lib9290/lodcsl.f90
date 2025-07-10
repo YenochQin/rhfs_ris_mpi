@@ -525,9 +525,10 @@
 !
 !   All done; report
 !
-      CALL CONVRT (NCF, RECORD, LENTH)
-      WRITE (6, *) 'There are '//RECORD(1:LENTH)//' relativistic CSFs;'
-      WRITE (6, *) ' ... load complete;'
+!     Output handled by main program to avoid duplication 
+!     CALL CONVRT (NCF, RECORD, LENTH)
+!     WRITE (6, *) 'There are '//RECORD(1:LENTH)//' relativistic CSFs;'
+!     WRITE (6, *) ' ... load complete;'
 !
 !   Debug printout
 !

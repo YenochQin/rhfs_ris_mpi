@@ -58,8 +58,7 @@
          STOP
       ENDIF
       
-      WRITE (6, *) 'DEBUG: First line of file: [', TRIM(STR), ']'
-      WRITE (6, *) 'DEBUG: Length of line:', LEN_TRIM(STR)
+!     DEBUG output removed for cleaner operation
       
       IF (TRIM(STR) /= 'Core subshells:') THEN
          WRITE (6, *) 'Not a Configuration Symmetry List File;'

@@ -83,7 +83,8 @@
          END DO
       END DO
 
-      WRITE (6, *) 'There are/is ', NW, ' relativistic subshells;'
+!     Output handled by main program to avoid duplication
+!     WRITE (6, *) 'There are/is ', NW, ' relativistic subshells;'
 !
 !   Skip the header for the list of CSFs
 !
